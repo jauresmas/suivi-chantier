@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Suivi de chantier{% endblock %}</title>
+  <style>
+    :root { color-scheme: light dark; --accent: #c2410c; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+    header { border-bottom: 4px solid var(--accent); padding: 1rem 1.5rem; }
+    header a { color: inherit; text-decoration: none; font-weight: 700; font-size: 1.25rem; }
+    main { max-width: 60rem; margin: 0 auto; padding: 2rem 1.5rem; }
+    a { color: var(--accent); }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header>
+    <a href="/">Suivi de chantier</a>
+  </header>
+  <main>
+    {% block content %}
+    <h1>Bienvenue</h1>
+    <p>Application de suivi des chantiers, adossée à PostgreSQL / PostGIS.</p>
+    <ul>
+      <li><a href="/docs">Documentation de l'API</a></li>
+      <li><a href="/health">État du service</a></li>
+    </ul>
+    {% endblock %}
+  </main>
+</body>
+</html>
