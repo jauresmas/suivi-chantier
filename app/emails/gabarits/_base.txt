@@ -1,0 +1,13 @@
+{% block contenu %}{% endblock %}
+
+
+--
+Suivi Chantier
+{% if securite %}
+E-mail de sécurité : il est toujours envoyé, quelles que soient vos préférences de notification.
+{% else %}
+Gérer mes notifications : {{ url_gerer }}
+{% if url_desinscription %}
+Ne plus recevoir d'e-mails pour ce chantier : {{ url_desinscription }}
+{% endif %}
+{% endif %}

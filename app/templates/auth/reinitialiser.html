@@ -1,0 +1,29 @@
+{% extends "auth/_cadre.html" %}
+{% from "composants/ui.html" import bouton, icone, erreur_champ, attributs_erreur %}
+
+{% block title %}Nouveau mot de passe · Suivi Chantier{% endblock %}
+{% block head %}<meta name="referrer" content="no-referrer">{% endblock %}
+
+{% block formulaire %}
+{% if invalide %}
+  <span class="grid size-11 place-items-center rounded-full bg-alerte-fond text-alerte">{{ icone("clock-alert", 22) }}</span>
+  <h1 class="mt-4 text-titre">Ce lien n'est plus valable</h1>
+  <p class="mt-2 text-corps text-texte-doux">Un lien de réinitialisation ne sert qu'une fois et expire au bout d'une heure. Demandez-en un nouveau.</p>
+  <div class="mt-6 grid">{{ bouton("Demander un nouveau lien", "primaire", href="/mot-de-passe-oublie") }}</div>
+{% else %}
+  <h1 class="mb-2 text-titre">Nouveau mot de passe</h1>
+  <p class="mb-6 text-corps text-texte-doux">Vous serez ensuite déconnecté de tous vos appareils.</p>
+  <form class="grid gap-4" method="post" action="/reinitialiser/{{ jeton }}" novalidate>
+    {{ champ_csrf(request) }}
+    <label class="etiquette">Nouveau mot de passe <span class="aide">Au moins {{ min }} caractères</span>
+      <input class="champ" type="password" name="mot_de_passe" autocomplete="new-password" minlength="{{ min }}" required {{ attributs_erreur(erreurs, "mot_de_passe") }}>
+      {{ erreur_champ(erreurs, "mot_de_passe") }}
+    </label>
+    <label class="etiquette">Confirmation
+      <input class="champ" type="password" name="confirmation" autocomplete="new-password" required {{ attributs_erreur(erreurs, "confirmation") }}>
+      {{ erreur_champ(erreurs, "confirmation") }}
+    </label>
+    {{ bouton("Enregistrer le mot de passe", "primaire", type="submit", classe="mt-2 w-full") }}
+  </form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "auth/_cadre.html" %}
+{% from "composants/ui.html" import icone, bouton %}
+
+{% block title %}Invitation · Suivi Chantier{% endblock %}
+
+{% block formulaire %}
+<span class="grid size-11 place-items-center rounded-full bg-alerte-fond text-alerte">{{ icone("triangle-alert", 22) }}</span>
+<h1 class="mt-4 text-titre">{{ message }}</h1>
+<p class="mt-2 text-corps text-texte-doux">Demandez un nouveau lien à la personne qui vous a invité(e).</p>
+<div class="mt-6 grid">{{ bouton("Retour à l'accueil", "secondaire", href="/") }}</div>
+{% endblock %}

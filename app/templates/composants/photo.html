@@ -1,0 +1,49 @@
+{#- Vignette de photo ouvrant la visionneuse. Le panneau d'informations est rendu ici, côté
+serveur, dans un <template> que visionneuse.js recopie : aucune logique d'affichage dupliquée en JS. -#}
+{% from "composants/ui.html" import icone, badge_photo_ui %}
+
+{% set POINT_STATUT = {
+  "succes": "bg-succes",
+  "danger": "bg-danger",
+  "neutre": "bg-neutre",
+} %}
+
+{% macro infos_photo(photo, etape, statut_position) -%}
+  {% set b = badge_photo(photo, statut_position) %}
+  <dl class="grid gap-3 text-corps">
+    <div><dt class="text-libelle text-white/60">Prise le</dt><dd>{{ (photo.prise_le or photo.envoyee_le) | balise_date }}</dd></div>
+    {% if etape %}<div><dt class="text-libelle text-white/60">Étape</dt><dd>{{ libelle_etape(etape) }}</dd></div>{% endif %}
+    <div><dt class="text-libelle text-white/60">Vérification</dt><dd class="mt-1">{{ badge_photo_ui(b, classe_mention="text-white/80") }}</dd></div>
+    {% if photo.distance_chantier_m is not none %}<div><dt class="text-libelle text-white/60">Distance au chantier</dt><dd class="tabular-nums">{{ photo.distance_chantier_m | distance }}</dd></div>{% endif %}
+    {% if photo.precision_m is not none %}<div><dt class="text-libelle text-white/60">Précision GPS</dt><dd class="tabular-nums">± {{ photo.precision_m | round | int }} m</dd></div>{% endif %}
+    {% if b.alertes %}
+      <div>
+        <dt class="text-libelle text-white/60">{{ "À vérifier" if b.avertissement else "Information" }}</dt>
+        <dd><ul class="mt-1 grid gap-1">{% for alerte in b.alertes %}<li class="flex gap-2">{{ icone("triangle-alert" if b.avertissement else "info", 16, "mt-0.5 shrink-0") }}{{ alerte }}</li>{% endfor %}</ul></dd>
+      </div>
+    {% endif %}
+  </dl>
+{%- endmacro %}
+
+{# texte_dessus : contenu affiché par-dessus la vignette (« +5 »). cachee : vignette accessible à la visionneuse seulement. #}
+{% macro vignette(photo, etape, chantier, taille=96, texte_dessus=None, cachee=False, classe="") -%}
+  {% set b = badge_photo(photo, chantier.statut_position) %}
+  {% set quand = (photo.prise_le or photo.envoyee_le) | date_courte %}
+  <a href="/photos/{{ photo.id }}"
+     class="ouvrir-photo group relative block aspect-square overflow-hidden rounded-lg bg-neutre-fond {{ 'hidden' if cachee else '' }} {{ classe }}"
+     data-photo="{{ photo.id }}" data-position="{{ 1 if photo.position is not none else 0 }}"
+     data-carte="/chantiers/{{ chantier.id }}?photo={{ photo.id }}#carte">
+    <img src="/photos/{{ photo.id }}/miniature" width="{{ taille }}" height="{{ taille }}" loading="lazy" decoding="async"
+         alt="Photo{% if etape %} — {{ libelle_etape(etape) }}{% endif %} — {{ quand }}"
+         class="size-full object-cover transition-transform duration-150 group-hover:scale-[1.03]">
+    {% if texte_dessus %}
+      <span class="absolute inset-0 grid place-items-center bg-texte/60 text-section text-white">{{ texte_dessus }}</span>
+    {% else %}
+      <span class="absolute bottom-1 left-1 inline-flex items-center gap-1 rounded-full bg-surface/95 px-1.5 py-0.5 text-[11px] font-medium text-texte shadow-carte" title="{{ b.titre }}">
+        <span class="size-2 rounded-full {{ POINT_STATUT[b.ton] }}"></span>{% if b.avertissement %}{{ icone("triangle-alert", 12, "text-alerte") }}{% endif %}
+        <span class="sr-only">{{ b.texte }}</span>
+      </span>
+    {% endif %}
+    <template>{{ infos_photo(photo, etape, chantier.statut_position) }}</template>
+  </a>
+{%- endmacro %}

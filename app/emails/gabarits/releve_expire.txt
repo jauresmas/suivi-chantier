@@ -1,0 +1,10 @@
+{% extends "_base.txt" %}
+{% block contenu %}
+Le lien de relevé a expiré
+
+Le lien envoyé le {{ releve.cree_le | date_longue }} à {{ releve.nom_releveur }} pour relever la position de « {{ chantier.nom }} » n'a pas été utilisé dans les 72 heures.
+
+Vous pouvez envoyer un nouveau lien, à cette personne ou à un autre proche de confiance.
+
+Demander un nouveau relevé : {{ lien }}
+{% endblock %}

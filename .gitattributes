@@ -1,0 +1,3 @@
+# Feuille de style compilée : fins de ligne LF partout, pour que la recompilation (CI, Windows ou Linux)
+# donne exactement le même fichier que celui versionné.
+app/static/css/app.css text eol=lf

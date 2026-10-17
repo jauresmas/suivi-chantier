@@ -1,0 +1,14 @@
+{% extends "_base.txt" %}
+{% block contenu %}
+{% set avertissements = r.photos.avertissements() %}
+{% if avertissements %}
+⚠ PHOTOS À VÉRIFIER
+{% for ligne in avertissements %}
+- {{ ligne }}
+{% endfor %}
+
+{% endif %}
+Nouveau rapport sur « {{ chantier.nom }} »
+
+{% include "_rapport.txt" %}
+{% endblock %}

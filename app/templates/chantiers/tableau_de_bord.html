@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone, bouton, badge, alerte, indicateur, barre_progression, avatar, titre_section, pastille_etape %}
+{% from "composants/chantier.html" import entete_chantier, navigation_basse %}
+{% from "composants/position.html" import encart_position %}
+
+{% block title %}{{ chantier.nom }} · Suivi Chantier{% endblock %}
+{% block head %}
+  {% include "_carte_ressources.html" %}
+  <script src="/static/js/vendor/htmx-2.0.11.min.js" defer></script>
+{% endblock %}
+{% block marge_basse %}pb-24 lg:pb-8{% endblock %}
+
+{% block content %}
+{% set s = synthese %}
+<div class="grid gap-6">
+  {# --- En-tête de synthèse --- #}
+  <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    {{ entete_chantier(chantier, onglet) }}
+    <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:pb-3">
+      {{ bouton("Envoyer des photos", "primaire", href="/chantiers/%s/photos/envoyer" % chantier.id, icone_nom="camera", classe="col-span-2") }}
+      {% if est_proprietaire %}
+        {{ bouton("Inviter", "secondaire", href="/chantiers/%s/inviter" % chantier.id, icone_nom="user-plus") }}
+        {{ bouton("Modifier", "secondaire", href="/chantiers/%s/modifier" % chantier.id, icone_nom="pencil") }}
+      {% endif %}
+    </div>
+  </div>
+
+  {% if s.inactif %}
+    {% if s.dernier_rapport %}
+      {{ alerte("Aucune nouvelle depuis %d jours" % s.jours_sans_nouvelles, "Le dernier rapport publié date du " ~ (s.dernier_rapport | date_longue) ~ ".", "alerte", "clock-alert") }}
+    {% else %}
+      {{ alerte("Aucune nouvelle depuis %d jours" % s.jours_sans_nouvelles, "Aucun rapport n'a encore été publié sur ce chantier.", "alerte", "clock-alert") }}
+    {% endif %}
+  {% endif %}
+  {% if releve_a_valider %}
+    {{ alerte("Relevé reçu — à valider", "%s a relevé la position du terrain %s. Vérifiez-le sur la carte avant qu'il serve de référence." % (releve_a_valider.nom_releveur, releve_a_valider.realise_le | date_relative), "primaire", "map-pin",
+              "Vérifier", "/chantiers/%s/position/releves/%s" % (chantier.id, releve_a_valider.id)) }}
+  {% endif %}
+  {% if est_proprietaire and chantier.statut_position.value == "non_definie" and not releve_a_valider %}
+    {% if releve_en_attente %}
+      {{ alerte("Position du chantier à définir", "Lien de relevé envoyé à %s : vous serez averti dès qu'il sera fait." % releve_en_attente.nom_releveur, "neutre", "clock") }}
+    {% else %}
+      {{ alerte("Position du chantier à définir", "Sans elle, les photos ne peuvent pas être vérifiées. Un proche peut la relever sur le terrain en 2 minutes, avec son téléphone.", "alerte", "map-pin-off",
+                "Demander un relevé", "/chantiers/%s/position/demander" % chantier.id) }}
+    {% endif %}
+  {% endif %}
+  {% if position_validee %}
+    {{ alerte("Position du chantier confirmée", "Toutes les photos ont été revérifiées par rapport à la nouvelle position.", "succes", "circle-check") }}
+  {% endif %}
+  {% if brouillon %}
+    {{ alerte("Vous avez un rapport en brouillon", "Il n'est visible que de vous tant qu'il n'est pas publié.", "primaire", "file-text", "Reprendre", "/chantiers/%s/photos/envoyer" % chantier.id) }}
+  {% endif %}
+  {% if alerte_distance_km %}
+    {{ alerte("Position à vérifier", "Le point enregistré est à environ %d km de %s : latitude et longitude sont peut-être inversées." % (alerte_distance_km, chantier.ville), "alerte", "map-pin-off",
+              "Corriger" if est_proprietaire else None, "/chantiers/%s/modifier" % chantier.id) }}
+  {% endif %}
+
+  {# --- Quatre indicateurs --- #}
+  <section class="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Synthèse du chantier">
+    {% call indicateur(s.avancement ~ " %", "Avancement global", icone_nom="gauge") %}
+      {{ barre_progression(s.avancement, "Avancement global", afficher_valeur=False) }}
+    {% endcall %}
+    {{ indicateur((s.dernier_rapport | date_relative | capitalize) if s.dernier_rapport else "Aucun", "Dernier rapport", "alerte" if s.inactif else None, "clock",
+                  (s.dernier_rapport | date_courte) if s.dernier_rapport else "En attente du premier rapport") }}
+    {% set pct = s.verification.pourcentage %}
+    {% set v = s.verification %}
+    {{ indicateur((pct ~ " %") if pct is not none else "—", "Photos vérifiées",
+                  None if pct is none else ("succes" if pct >= 80 else ("alerte" if pct >= 50 else "danger")), "circle-check",
+                  ("%d sur %d photo%s vérifiable%s · 30 j" % (v.verifiees, v.verifiables, "s" if v.verifiables > 1 else "", "s" if v.verifiables > 1 else "")) if pct is not none else "Aucune photo vérifiable · 30 j") }}
+    {{ indicateur(s.etapes_en_retard, "Étapes en retard", "succes" if s.etapes_en_retard == 0 else "danger",
+                  "circle-check" if s.etapes_en_retard == 0 else "triangle-alert",
+                  "Tout est dans les temps" if s.etapes_en_retard == 0 else "Voir le détail des étapes") }}
+  </section>
+
+  {# --- Carte (fixe à gauche sur ordinateur), timeline (à droite), étapes et équipe --- #}
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:grid-rows-[auto_1fr]">
+    <section id="carte" class="relative lg:sticky lg:top-20 lg:col-start-1 lg:row-start-1 lg:self-start" aria-label="Carte du chantier et des photos">
+      <div id="carte-chantier" class="h-[40vh] min-h-64 overflow-hidden rounded-carte border border-bordure bg-neutre-fond shadow-carte lg:h-[26rem]"
+           data-latitude="{{ latitude }}" data-longitude="{{ longitude }}" data-rayon="{{ chantier.rayon_verification_m }}"
+           data-emprise="{{ emprise | tojson | forceescape if emprise else '' }}" data-photo="{{ photo_ciblee or '' }}"></div>
+      {% if latitude == "" %}
+        <p class="pointer-events-none absolute top-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-surface/95 px-3 py-1.5 text-libelle font-medium whitespace-nowrap shadow-carte">{{ icone("map-pin-off", 14, "text-alerte") }} Position du chantier à définir</p>
+      {% endif %}
+      <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+        {% if latitude != "" %}<p class="text-libelle text-texte-doux">Rayon de vérification : <span class="tabular-nums">{{ chantier.rayon_verification_m }} m</span></p>{% endif %}
+        <div class="flex gap-1">
+          <button type="button" id="voir-photos" class="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-libelle font-medium text-primaire hover:bg-primaire-clair">{{ icone("scan-search", 16) }} Voir toutes les photos</button>
+          <button type="button" id="agrandir-carte" class="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-libelle font-medium text-primaire hover:bg-primaire-clair lg:hidden" aria-pressed="false">{{ icone("maximize-2", 16) }} <span>Agrandir</span></button>
+        </div>
+      </div>
+    </section>
+
+    <div class="lg:col-start-2 lg:row-span-2 lg:row-start-1">
+      {% include "chantiers/_zone_timeline.html" %}
+    </div>
+
+    <aside class="grid content-start gap-6 lg:col-start-1 lg:row-start-2">
+      {{ encart_position(chantier, fiabilite, est_proprietaire, releve_a_valider, releve_en_attente) }}
+
+      <section class="rounded-carte border border-bordure bg-surface p-4 shadow-carte" aria-labelledby="titre-etapes">
+        {{ titre_section("Étapes", "Tout voir", "/chantiers/%s/etapes" % chantier.id, id="titre-etapes") }}
+        {% if etapes %}
+          <ul class="mt-2 divide-y divide-bordure">
+            {% for etape in etapes %}
+              {% set etat = etat_etape(etape) %}
+              <li>
+                <a href="/chantiers/{{ chantier.id }}/etapes/{{ etape.id }}" class="flex min-h-11 items-center gap-3 py-1.5 text-texte no-underline hover:no-underline">
+                  {{ pastille_etape(etat) }}
+                  <span class="min-w-0 flex-1 truncate">{{ libelle_etape(etape) }}
+                    {% if etat.statut.value == "en_retard" %}<span class="block text-libelle font-medium text-danger">{{ etat.libelle }}</span>{% endif %}
+                  </span>
+                  <span class="text-libelle font-semibold tabular-nums">{{ etape.avancement_pct }} %</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="mt-2 aide">Aucune étape définie.</p>
+        {% endif %}
+      </section>
+
+      <section class="rounded-carte border border-bordure bg-surface p-4 shadow-carte" aria-labelledby="titre-equipe">
+        {{ titre_section("Équipe", "Inviter" if est_proprietaire else None, "/chantiers/%s/inviter" % chantier.id, id="titre-equipe") }}
+        <ul class="mt-2 grid gap-2">
+          {% for membre in membres %}
+            <li class="flex items-center gap-3">
+              {{ avatar(membre.user.nom_complet) }}
+              <span class="min-w-0 flex-1 truncate">{{ membre.user.nom_complet }}</span>
+              {{ badge(LIBELLES_ROLE[membre.role], "primaire" if membre.role.value == "proprietaire" else "neutre") }}
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    </aside>
+  </div>
+</div>
+
+{% include "composants/visionneuse.html" %}
+<script type="module" src="/static/js/tableau-de-bord.js"></script>
+<script type="module" src="/static/js/visionneuse.js"></script>
+{% endblock %}
+
+{% block navigation_basse %}{{ navigation_basse(chantier, onglet) }}{% endblock %}

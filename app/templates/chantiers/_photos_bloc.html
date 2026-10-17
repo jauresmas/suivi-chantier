@@ -1,0 +1,13 @@
+{#- Un bloc de vignettes de l'onglet Photos, suivi si besoin du déclencheur du bloc suivant. -#}
+{% from "composants/photo.html" import vignette %}
+{% for photo in photos %}
+  <li>{{ vignette(photo, photo.rapport.etape, chantier, taille=200) }}</li>
+{% endfor %}
+{% if suivant %}
+  {% set requete = filtres.parametres() %}
+  <li class="col-span-full grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6" aria-busy="true"
+      hx-get="/chantiers/{{ chantier.id }}/photos?{{ requete ~ '&' if requete }}page={{ page + 1 }}" hx-trigger="revealed" hx-swap="outerHTML">
+    <span class="sr-only">Chargement des photos suivantes…</span>
+    {% for _ in range(6) %}<div class="aspect-square animate-pulse rounded-lg bg-neutre-fond" aria-hidden="true"></div>{% endfor %}
+  </li>
+{% endif %}

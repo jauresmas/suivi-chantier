@@ -15,3 +15,17 @@ __pycache__/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Configuration locale des outils (aperçu du serveur, etc.)
+.claude/
+
+# Photos envoyées (STOCKAGE_PHOTOS_DIR par défaut)
+stockage/
+
+# Exécutable Tailwind autonome (107 Mo) : à télécharger, voir README
+outils/
+
+# Couverture des tests et caches des outils
+.coverage
+htmlcov/
+.ruff_cache/

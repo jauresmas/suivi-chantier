@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone, bouton, badge, alerte, titre_section, avatar %}
+{% from "composants/position.html" import resume_fiabilite %}
+
+{% block title %}Position du chantier · {{ chantier.nom }}{% endblock %}
+
+{% block content %}
+{% set en_attente = releves | selectattr("statut_effectif.value", "equalto", "en_attente") | first %}
+{% set a_valider = releves | selectattr("statut.value", "equalto", "recu") | first %}
+<div class="mx-auto grid max-w-3xl gap-6">
+  <div class="grid gap-2">
+    <a href="/chantiers/{{ chantier.id }}" class="inline-flex min-h-11 w-fit items-center gap-1 text-libelle text-texte-doux no-underline hover:text-texte hover:no-underline">{{ icone("chevron-left", 16) }} {{ chantier.nom }}</a>
+    <h1 class="text-titre">Position du chantier</h1>
+  </div>
+
+  <section class="grid gap-4 rounded-carte border border-bordure bg-surface p-5 shadow-carte" aria-label="Position actuelle">
+    {{ resume_fiabilite(fiabilite, "size-12") }}
+    {% if position %}
+      <dl class="grid gap-3 text-corps sm:grid-cols-2">
+        <div><dt class="text-libelle text-texte-doux">Coordonnées (WGS 84)</dt><dd class="font-mono tabular-nums">{{ "%.6f" | format(position[0]) }}, {{ "%.6f" | format(position[1]) }}</dd></div>
+        <div><dt class="text-libelle text-texte-doux">Source</dt><dd>{{ LIBELLES_SOURCE_POSITION[chantier.source_position] }}</dd></div>
+        {% if chantier.position_confirmee_le %}<div><dt class="text-libelle text-texte-doux">Confirmée le</dt><dd>{{ chantier.position_confirmee_le | balise_date }}</dd></div>{% endif %}
+      </dl>
+    {% endif %}
+    <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      {% if not en_attente and not a_valider %}
+        {% if chantier.statut_position.value == "confirmee" %}
+          {{ bouton("Demander un nouveau relevé", "secondaire", href="/chantiers/%s/position/demander" % chantier.id, icone_nom="send") }}
+        {% else %}
+          {{ bouton("Demander un relevé à un proche", "primaire", href="/chantiers/%s/position/demander" % chantier.id, icone_nom="send") }}
+        {% endif %}
+      {% endif %}
+      {% if not a_valider %}
+        {{ bouton("Placer moi-même sur la carte" if not position else "Déplacer sur la carte", "secondaire", href="/chantiers/%s/modifier" % chantier.id, icone_nom="map-pin") }}
+      {% endif %}
+    </div>
+    <p class="flex gap-2 rounded-lg bg-primaire-clair px-3 py-2 text-libelle text-primaire">{{ icone("info", 16, "mt-0.5 shrink-0") }}
+      <span>Cette position sert de référence pour vérifier où les photos ont été prises. Pour qu'elle soit fiable, elle ne doit pas être fixée par la personne dont on vérifie le travail : confiez le relevé à un proche plutôt qu'au chef de chantier.</span>
+    </p>
+  </section>
+
+  {% if a_valider %}
+    {{ alerte("Relevé reçu — à valider", "%s a relevé la position du terrain %s." % (a_valider.nom_releveur, a_valider.realise_le | date_relative), "primaire", "map-pin",
+              "Vérifier et valider", "/chantiers/%s/position/releves/%s" % (chantier.id, a_valider.id)) }}
+  {% endif %}
+
+  {% if en_attente %}
+    <section class="grid gap-3 rounded-carte border border-bordure bg-surface p-5 shadow-carte" aria-labelledby="titre-attente">
+      <h2 class="text-section" id="titre-attente">Lien en attente</h2>
+      <p class="text-corps">Envoyé à <strong>{{ en_attente.nom_releveur }}</strong>{% if en_attente.lien_releveur %} ({{ en_attente.lien_releveur }}){% endif %},
+        valable jusqu'au <span class="tabular-nums">{{ en_attente.expire_le | date_courte }}</span>. Vous serez averti dès que le relevé sera fait.</p>
+      <p class="aide">Pour des raisons de sécurité, un lien ne peut pas être réaffiché. S'il a été perdu, annulez-le puis créez-en un nouveau.</p>
+      <form method="post" action="/chantiers/{{ chantier.id }}/position/releves/{{ en_attente.id }}/annuler">
+        {{ champ_csrf(request) }}
+        {{ bouton("Annuler ce lien", "danger", type="submit", icone_nom="ban") }}
+      </form>
+    </section>
+  {% endif %}
+
+  <section class="grid gap-3 rounded-carte border border-bordure bg-surface p-5 shadow-carte" aria-labelledby="titre-releves">
+    {{ titre_section("Relevés", id="titre-releves") }}
+    {% if releves %}
+      <ul class="divide-y divide-bordure">
+        {% for r in releves %}
+          {% set libelle, ton, nom_icone = LIBELLES_STATUT_RELEVE[r.statut_effectif] %}
+          <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
+            {{ avatar(r.nom_releveur) }}
+            <div class="min-w-0 flex-1">
+              <p class="font-medium">{{ r.nom_releveur }}{% if r.lien_releveur %} <span class="font-normal text-texte-doux">· {{ r.lien_releveur }}</span>{% endif %}</p>
+              <p class="text-libelle text-texte-doux">{{ LIBELLES_TYPE_RELEVEUR[r.type_releveur] }} · demandé le {{ r.cree_le | date_courte }}{% if r.realise_le %} · relevé le {{ r.realise_le | date_courte }}{% endif %}</p>
+            </div>
+            {{ badge(libelle, ton, nom_icone) }}
+            {% if r.position_resultat is not none %}
+              <a href="/chantiers/{{ chantier.id }}/position/releves/{{ r.id }}" class="inline-flex min-h-11 items-center text-libelle font-medium">{{ "Vérifier" if r.statut.value == "recu" else "Voir" }}</a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="aide">Aucun relevé demandé pour l'instant.</p>
+    {% endif %}
+  </section>
+
+  <section class="grid gap-3 rounded-carte border border-bordure bg-surface p-5 shadow-carte" aria-labelledby="titre-historique">
+    {{ titre_section("Historique de la position", id="titre-historique") }}
+    {% if historique %}
+      <ol class="grid gap-4">
+        {% for ligne in historique %}
+          {% set h = ligne.entree %}
+          <li class="flex gap-3">
+            <span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-neutre-fond text-neutre">{{ icone("history", 16) }}</span>
+            <div class="min-w-0 flex-1">
+              <p class="font-medium">{{ LIBELLES_STATUT_POSITION[h.ancien_statut] }} → {{ LIBELLES_STATUT_POSITION[h.nouveau_statut] }}
+                <span class="font-normal text-texte-doux">· {{ fiabilite_de(h.nouveau_statut, h.source).libelle }}</span></p>
+              <p class="text-libelle text-texte-doux">
+                {{ h.cree_le | balise_date }} · par {{ ligne.auteur or "compte supprimé" }}
+                {%- if h.releve %} · relevé de {{ h.releve.nom_releveur }}{% endif %}
+                {%- if ligne.deplacement_m is not none %} · déplacée de <span class="tabular-nums">{{ ligne.deplacement_m | distance }}</span>{% elif h.ancienne_position is none %} · première position{% endif %}
+              </p>
+              {% if ligne.latitude is not none %}<p class="font-mono text-libelle text-texte-doux tabular-nums">{{ "%.6f" | format(ligne.latitude) }}, {{ "%.6f" | format(ligne.longitude) }}</p>{% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <p class="aide">La position n'a pas encore été définie.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{#- Puces de filtres combinables, reflétées dans l'URL. Contexte : chantier, filtres, etapes_filtres,
+url_page (adresse affichée), url_bloc (fragment rechargé par HTMX), cible (id de la zone remplacée).
+Sans JavaScript, chaque puce reste un lien normal. -#}
+{% from "composants/ui.html" import icone %}
+
+{% macro puce(texte, nouveaux_filtres, actif, nom_icone=None) -%}
+  {% set requete = nouveaux_filtres.parametres() %}
+  <a href="{{ url_page }}{{ '?' ~ requete if requete }}"
+     hx-get="{{ url_bloc }}?{{ requete }}" hx-target="#{{ cible }}" hx-select="#{{ cible }}" hx-swap="outerHTML"
+     hx-push-url="{{ url_page }}{{ '?' ~ requete if requete }}"
+     class="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-libelle font-medium no-underline transition-colors duration-150 hover:no-underline {{ 'border-primaire bg-primaire text-white' if actif else 'border-bordure bg-surface text-texte hover:border-primaire/40' }}"
+     {% if actif %}aria-current="true"{% endif %}>
+    {%- if nom_icone %}{{ icone(nom_icone, 14) }}{% endif %}{{ texte -}}
+  </a>
+{%- endmacro %}
+
+<div class="-mx-4 flex gap-2 overflow-x-auto px-4 py-1 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:px-0" role="group" aria-label="Filtres">
+  {{ puce("Hors zone ou alertes", filtres.avec(alertes=not filtres.alertes), filtres.alertes, "triangle-alert") }}
+  {% for cle, libelle in [("7j", "7 jours"), ("30j", "30 jours"), ("tout", "Tout")] %}
+    {{ puce(libelle, filtres.avec(periode=cle, du=None, au=None), filtres.periode == cle, "calendar" if loop.first else None) }}
+  {% endfor %}
+  {{ puce("Dates…", filtres.avec(periode="perso"), filtres.periode == "perso", "calendar-range") }}
+  {% for etape in etapes_filtres %}
+    {{ puce(libelle_etape(etape), filtres.avec(etape=None if filtres.etape == etape.id else etape.id), filtres.etape == etape.id) }}
+  {% endfor %}
+</div>
+
+{% if filtres.periode == "perso" %}
+  <form class="mt-3 flex flex-wrap items-end gap-3" method="get" action="{{ url_page }}"
+        hx-get="{{ url_bloc }}" hx-target="#{{ cible }}" hx-select="#{{ cible }}" hx-swap="outerHTML" hx-push-url="true">
+    <input type="hidden" name="periode" value="perso">
+    {% if filtres.etape %}<input type="hidden" name="etape" value="{{ filtres.etape }}">{% endif %}
+    {% if filtres.alertes %}<input type="hidden" name="alertes" value="1">{% endif %}
+    <label class="etiquette">Du <input class="champ" type="date" name="du" value="{{ filtres.du or '' }}"></label>
+    <label class="etiquette">Au <input class="champ" type="date" name="au" value="{{ filtres.au or '' }}"></label>
+    <button type="submit" class="inline-flex min-h-11 items-center rounded-lg bg-primaire px-4 font-medium text-white hover:bg-primaire-fonce">Appliquer</button>
+  </form>
+{% endif %}

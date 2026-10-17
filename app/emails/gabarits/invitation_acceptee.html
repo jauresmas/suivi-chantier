@@ -1,0 +1,12 @@
+{% extends "_base.html" %}
+{% import "_elements.html" as e %}
+{% block apercu %}{{ membre.nom_complet }} a accepté votre invitation.{% endblock %}
+{% block contenu %}
+  {{ e.titre(membre.nom_complet ~ " a rejoint le chantier") }}
+  {% call e.paragraphe() %}
+    <strong>{{ membre.nom_complet }}</strong> ({{ membre.email }}) a accepté votre invitation sur « {{ chantier.nom }} »
+    comme <strong>{{ LIBELLES_ROLE[role] | lower }}</strong>.
+    {% if role.value == "chef_chantier" %}Ses rapports et ses photos apparaîtront sur la page du chantier.{% endif %}
+  {% endcall %}
+  {{ e.bouton("Voir le chantier", lien) }}
+{% endblock %}

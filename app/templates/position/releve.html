@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone, bouton, badge, alerte %}
+
+{% set a_traiter = releve.statut.value == "recu" %}
+{% set libelle_statut, ton_statut, icone_statut = LIBELLES_STATUT_RELEVE[releve.statut_effectif] %}
+{% block title %}{{ "Valider le relevé" if a_traiter else "Relevé de position" }} · {{ chantier.nom }}{% endblock %}
+{% block head %}
+  {% include "_carte_ressources.html" %}
+  <script type="application/json" id="donnees-releve">{{ {"carte": carte, "precision_m": releve.precision_estimee_m} | tojson }}</script>
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto grid max-w-4xl gap-6">
+  <div class="grid gap-2">
+    <a href="/chantiers/{{ chantier.id }}/position" class="inline-flex min-h-11 w-fit items-center gap-1 text-libelle text-texte-doux no-underline hover:text-texte hover:no-underline">{{ icone("chevron-left", 16) }} Position du chantier</a>
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <h1 class="text-titre">{{ "Valider le relevé" if a_traiter else "Relevé de position" }}</h1>
+      {{ badge(libelle_statut, ton_statut, icone_statut) }}
+    </div>
+  </div>
+
+  {% if erreur %}{{ alerte(erreur, ton="danger", icone_nom="circle-x", role="alert") }}{% endif %}
+  {% for texte in alertes %}
+    {{ alerte("Relevé fait depuis un compte du chantier", texte, "danger", "shield-alert", role="alert") }}
+  {% endfor %}
+  {% if alerte_distance %}
+    {{ alerte("Relevé éloigné de la position actuelle", "Le relevé est à %s de la position que vous aviez indiquée. Vérifiez avant de valider." % (distance_m | distance), "alerte", "triangle-alert", role="alert") }}
+  {% endif %}
+  {% if releve.signal_faible %}
+    {{ alerte("Signal faible", "Le téléphone captait mal : le point peut être décalé de plusieurs dizaines de mètres. Vous pouvez demander un nouveau relevé.", "alerte", "signal-low") }}
+  {% endif %}
+
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+    <section aria-label="Carte du relevé">
+      <div id="carte-releve" class="h-[50vh] min-h-72 overflow-hidden rounded-carte border border-bordure bg-neutre-fond shadow-carte lg:h-[28rem]"></div>
+      <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-libelle text-texte-doux">
+        <li class="flex items-center gap-1.5"><span class="size-3 rounded-full border-2 border-white bg-primaire shadow-carte"></span> Point relevé</li>
+        <li class="flex items-center gap-1.5"><span class="size-3 rounded-full border-2 border-dashed border-primaire"></span> Précision ± {{ releve.precision_estimee_m | round | int }} m</li>
+        <li class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent"></span> Mesures ({{ releve.nb_mesures }})</li>
+        {% if carte.ancienne %}<li class="flex items-center gap-1.5"><span class="size-3 rounded-full border-2 border-white bg-neutre shadow-carte"></span> Position actuelle</li>{% endif %}
+      </ul>
+    </section>
+
+    <section class="grid content-start gap-4 rounded-carte border border-bordure bg-surface p-5 shadow-carte" aria-label="Détails du relevé">
+      <dl class="grid gap-3 text-corps">
+        <div><dt class="text-libelle text-texte-doux">Relevé par</dt>
+          <dd><strong>{{ releve.nom_releveur }}</strong>{% if releve.lien_releveur %} · {{ releve.lien_releveur }}{% endif %} <span class="text-texte-doux">({{ LIBELLES_TYPE_RELEVEUR[releve.type_releveur] | lower }})</span></dd></div>
+        <div><dt class="text-libelle text-texte-doux">Date</dt><dd>{{ releve.realise_le | balise_date }}</dd></div>
+        <div><dt class="text-libelle text-texte-doux">Durée</dt><dd class="tabular-nums">{{ releve.duree_releve_s }} s · {{ releve.nb_mesures }} mesures retenues</dd></div>
+        <div><dt class="text-libelle text-texte-doux">Qualité du signal</dt>
+          <dd class="mt-1 flex flex-wrap items-center gap-2">{{ badge(qualite.libelle, qualite.ton, qualite.icone) }} <span class="text-libelle tabular-nums text-texte-doux">± {{ releve.precision_estimee_m | round | int }} m</span></dd></div>
+        <div><dt class="text-libelle text-texte-doux">Distance à la position actuelle</dt>
+          <dd class="tabular-nums">{{ (distance_m | distance) if distance_m is not none else "Aucune position auparavant" }}</dd></div>
+        {% if a_traiter %}
+          <div><dt class="text-libelle text-texte-doux">Après validation</dt><dd class="mt-1">{{ badge(fiabilite_releve.libelle, fiabilite_releve.ton, fiabilite_releve.icone) }}</dd></div>
+        {% endif %}
+        {% if releve.appareil %}<div><dt class="text-libelle text-texte-doux">Téléphone</dt><dd class="text-libelle break-words text-texte-doux">{{ releve.appareil }}</dd></div>{% endif %}
+      </dl>
+    </section>
+  </div>
+
+  <section class="grid gap-3 rounded-carte border border-bordure bg-surface p-5 shadow-carte" aria-labelledby="titre-photos-releve">
+    <h2 class="text-section" id="titre-photos-releve">Photos du terrain</h2>
+    {% if releve.photos %}
+      <ul class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {% for photo in releve.photos %}
+          {% set url = "/chantiers/%s/position/releves/%s/photos/%s" % (chantier.id, releve.id, photo.id) %}
+          <li><a href="{{ url }}" target="_blank" rel="noopener" class="block aspect-square overflow-hidden rounded-lg bg-neutre-fond">
+            <img src="{{ url }}?miniature=true" width="200" height="200" loading="lazy" alt="Photo du terrain {{ loop.index }}, prise par {{ releve.nom_releveur }}" class="size-full object-cover">
+          </a></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="aide">Aucune photo envoyée avec ce relevé.</p>
+    {% endif %}
+  </section>
+
+  {% if a_traiter %}
+    <section class="grid gap-4 rounded-carte border border-bordure bg-surface p-5 shadow-carte" aria-labelledby="titre-decision">
+      <h2 class="text-section" id="titre-decision">Votre décision</h2>
+      <form method="post" action="/chantiers/{{ chantier.id }}/position/releves/{{ releve.id }}/valider" class="grid gap-3">
+        {{ champ_csrf(request) }}
+        {% if chantier.statut_position.value == "confirmee" %}
+          <label class="flex items-start gap-3 rounded-lg border border-alerte/30 bg-alerte-fond p-3">
+            <input type="checkbox" name="confirmer_remplacement" value="1" class="mt-0.5 size-5 shrink-0 accent-primaire" required>
+            <span>Je remplace la position confirmée le {{ chantier.position_confirmee_le | date_longue }} ({{ fiabilite.libelle | lower }}).</span>
+          </label>
+        {% endif %}
+        <p class="aide">La position du chantier sera remplacée par le point relevé, et toutes les photos seront revérifiées.</p>
+        {{ bouton("Valider cette position", "primaire", type="submit", icone_nom="circle-check") }}
+      </form>
+      <details class="rounded-lg border border-bordure p-3">
+        <summary class="flex min-h-11 cursor-pointer items-center font-medium text-danger">Rejeter ce relevé</summary>
+        <form method="post" action="/chantiers/{{ chantier.id }}/position/releves/{{ releve.id }}/rejeter" class="mt-2 grid gap-3">
+          {{ champ_csrf(request) }}
+          <label class="etiquette">Motif <span class="aide">Facultatif</span>
+            <textarea class="champ" name="motif" rows="2" maxlength="1000" placeholder="Le point n'est pas sur mon terrain"></textarea>
+          </label>
+          <p class="aide">La position du chantier ne changera pas. Vous pourrez demander un nouveau relevé.</p>
+          {{ bouton("Rejeter", "danger", type="submit", icone_nom="circle-x") }}
+        </form>
+      </details>
+    </section>
+  {% elif releve.traite_le %}
+    {{ alerte(("Validé le " if releve.statut.value == "valide" else "Rejeté le ") ~ (releve.traite_le | date_longue),
+              ("Motif : " ~ releve.motif_rejet) if releve.motif_rejet else None,
+              "succes" if releve.statut.value == "valide" else "neutre", "circle-check" if releve.statut.value == "valide" else "circle-x") }}
+  {% endif %}
+</div>
+<script type="module" src="/static/js/releve-validation.js"></script>
+{% endblock %}

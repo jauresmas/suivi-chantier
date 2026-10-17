@@ -1,0 +1,11 @@
+{% extends "_base.txt" %}
+{% block contenu %}
+Bonjour {{ destinataire.nom_complet }},
+
+Vous avez demandé à choisir un nouveau mot de passe pour votre compte Suivi Chantier.
+Ce lien est valable 1 heure et ne sert qu'une fois :
+
+{{ lien }}
+
+Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail : votre mot de passe ne change pas.
+{% endblock %}

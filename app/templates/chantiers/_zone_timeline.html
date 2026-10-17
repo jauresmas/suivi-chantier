@@ -1,0 +1,33 @@
+{#- Zone de la timeline : filtres et premier bloc de rapports. Remplacée en entier quand un filtre change ;
+data-geojson donne à la carte l'adresse des photos correspondant aux mêmes filtres. -#}
+{% from "composants/ui.html" import etat_vide %}
+{% set requete = filtres.parametres() %}
+{% set url_page = "/chantiers/%s" % chantier.id %}
+{% set url_bloc = "/chantiers/%s/timeline" % chantier.id %}
+{% set cible = "zone-timeline" %}
+
+<section id="zone-timeline" class="grid gap-4" aria-labelledby="titre-timeline"
+         data-geojson="/api/chantiers/{{ chantier.id }}/photos.geojson{{ '?' ~ requete if requete }}">
+  <div class="flex items-center justify-between gap-3">
+    <h2 id="titre-timeline" class="text-section">Rapports</h2>
+    {% if filtres.actifs %}
+      <a href="{{ url_page }}" hx-get="{{ url_bloc }}" hx-target="#zone-timeline" hx-select="#zone-timeline" hx-swap="outerHTML" hx-push-url="{{ url_page }}"
+         class="inline-flex min-h-11 items-center text-libelle font-medium">Effacer les filtres</a>
+    {% endif %}
+  </div>
+
+  {% include "chantiers/_filtres.html" %}
+
+  {% if rapports %}
+    <ol class="relative grid gap-4 before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-px before:bg-bordure">
+      {% include "chantiers/_rapports_timeline.html" %}
+    </ol>
+  {% elif filtres.actifs %}
+    {{ etat_vide("funnel", "Aucun rapport pour ces filtres", "Élargissez la période ou retirez un filtre.", "Effacer les filtres", url_page) }}
+  {% else %}
+    {{ etat_vide("message-square", "Aucun rapport pour l'instant",
+                 "Les rapports publiés par votre chef de chantier, avec leurs photos, apparaîtront ici.",
+                 "Inviter votre chef de chantier" if est_proprietaire else "Envoyer des photos",
+                 ("/chantiers/%s/inviter" if est_proprietaire else "/chantiers/%s/photos/envoyer") % chantier.id) }}
+  {% endif %}
+</section>

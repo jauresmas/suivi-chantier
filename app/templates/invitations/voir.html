@@ -1,0 +1,30 @@
+{% extends "auth/_cadre.html" %}
+{% from "composants/ui.html" import icone, bouton, alerte %}
+
+{% block title %}Invitation · Suivi Chantier{% endblock %}
+
+{% block formulaire %}
+<span class="grid size-11 place-items-center rounded-full bg-primaire-clair text-primaire">{{ icone("user-plus", 22) }}</span>
+<h1 class="mt-4 text-titre">Invitation</h1>
+<p class="mt-2 text-corps text-texte-doux">
+  Vous êtes invité(e) à rejoindre le chantier <strong class="text-texte">« {{ chantier.nom }} »</strong>{% if chantier.ville %} à {{ chantier.ville }}{% endif %},
+  en tant que <strong class="text-texte">{{ LIBELLES_ROLE[invitation.role] | lower }}</strong>.
+</p>
+
+<div class="mt-6 grid gap-3">
+  {% if not utilisateur %}
+    <p class="text-corps">Pour accepter, créez votre compte ou connectez-vous. Vous reviendrez ensuite sur cette page.</p>
+    {{ bouton("Créer un compte", "primaire", href="/inscription?suivant=" ~ suivant) }}
+    {{ bouton("J'ai déjà un compte", "secondaire", href="/connexion?suivant=" ~ suivant) }}
+  {% elif deja_membre %}
+    {{ alerte("Vous êtes déjà membre de ce chantier", ton="succes", icone_nom="circle-check") }}
+    {{ bouton("Voir le chantier", "primaire", href="/chantiers/%s" % chantier.id) }}
+  {% else %}
+    <form method="post" action="/invitations/{{ jeton }}/accepter" class="grid">
+      {{ champ_csrf(request) }}
+      {{ bouton("Rejoindre le chantier", "primaire", type="submit", icone_nom="check") }}
+    </form>
+    <p class="aide">Connecté(e) en tant que {{ utilisateur.nom_complet }}.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+# Vérifications automatiques de chaque push sur main et de chaque pull request.
+# Les mêmes commandes se lancent en local : voir « Intégration continue » dans le README.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Un nouveau push sur la même branche annule l'exécution précédente, devenue inutile.
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verifications:
+    name: Lint, migrations et tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: suivi_chantier
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    # Valeurs de test uniquement : aucun secret réel.
+    env:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/suivi_chantier
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/suivi_chantier_test
+      SECRET_KEY: cle-factice-de-la-ci-pas-un-secret
+      APP_ENV: test
+      EMAIL_BACKEND: console
+      # psql (étape 3)
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Dossier temporaire des photos
+        run: echo "STOCKAGE_PHOTOS_DIR=$RUNNER_TEMP/photos" >> "$GITHUB_ENV"
+
+      - name: 1. Dépendances
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: 2. Ruff (règles, puis formatage)
+        run: |
+          ruff check . --output-format=github
+          ruff format --check .
+
+      - name: 3. Bases suivi_chantier et suivi_chantier_test avec PostGIS
+        run: |
+          psql -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE suivi_chantier_test"
+          for base in suivi_chantier suivi_chantier_test; do
+            psql -d "$base" -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS postgis"
+          done
+
+      - name: 4. Migrations
+        run: alembic upgrade head
+
+      # Échoue si un modèle a changé (colonne, index, table…) sans migration correspondante.
+      - name: 5. Modèles et migrations synchronisés
+        run: alembic check
+
+      - name: 6. Aller-retour des migrations
+        run: |
+          alembic downgrade base
+          alembic upgrade head
+
+      - name: 7. Tests et couverture (75 % au moins)
+        run: pytest --cov --cov-report=term --cov-fail-under=75
+
+      - name: Couverture dans le résumé du job
+        if: ${{ !cancelled() && hashFiles('.coverage') != '' }}
+        run: |
+          echo "## Couverture des tests" >> "$GITHUB_STEP_SUMMARY"
+          coverage report --format=markdown --fail-under=0 >> "$GITHUB_STEP_SUMMARY"
+
+      # Même version que celle qui a produit app/static/css/app.css, empreinte vérifiée.
+      - name: 8. Feuille de style à jour (Tailwind CSS v4.3.3)
+        run: |
+          mkdir -p outils
+          base=https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3
+          curl -sSfL -o outils/tailwindcss "$base/tailwindcss-linux-x64"
+          curl -sSfL -o outils/sha256sums.txt "$base/sha256sums.txt"
+          echo "$(grep 'tailwindcss-linux-x64$' outils/sha256sums.txt | cut -d' ' -f1)  outils/tailwindcss" | sha256sum --check
+          chmod +x outils/tailwindcss
+          ./outils/tailwindcss -i app/static/css/source.css -o app/static/css/app.css --minify
+          if ! git diff --quiet -- app/static/css/app.css; then
+            echo "::error file=app/static/css/app.css::Feuille de style pas à jour : recompilez-la (commande dans le README) et commitez app.css."
+            exit 1
+          fi

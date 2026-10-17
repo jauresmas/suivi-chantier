@@ -1,0 +1,55 @@
+{#- En-tête et navigation communs aux pages d'un chantier (vue d'ensemble, photos, étapes). -#}
+{% from "composants/ui.html" import icone, badge %}
+
+{% set ONGLETS = [
+  ("vue", "Vue d'ensemble", "layout-dashboard", ""),
+  ("photos", "Photos", "images", "/photos"),
+  ("etapes", "Étapes", "list-checks", "/etapes"),
+] %}
+
+{% macro badge_statut(chantier) -%}
+  {% set ton, nom_icone = APPARENCE_STATUT[chantier.statut] %}
+  {{ badge(LIBELLES_STATUT[chantier.statut], ton, nom_icone) }}
+{%- endmacro %}
+
+{# Titre du chantier et, sur ordinateur, onglets horizontaux. #}
+{% macro entete_chantier(chantier, onglet) -%}
+  <div class="flex flex-col gap-3">
+    <a href="/chantiers" class="inline-flex min-h-11 w-fit items-center gap-1 text-libelle text-texte-doux no-underline hover:text-texte hover:no-underline">{{ icone("chevron-left", 16) }} Mes chantiers</a>
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <h1 class="text-titre">{{ chantier.nom }}</h1>
+      {{ badge_statut(chantier) }}
+    </div>
+    {% if chantier.ville %}
+      <p class="-mt-1 flex items-center gap-1.5 text-libelle text-texte-doux">{{ icone("map-pin", 14) }} {{ chantier.ville }}{% if chantier.pays %}, {{ chantier.pays }}{% endif %}</p>
+    {% endif %}
+    <nav class="hidden border-b border-bordure lg:block" aria-label="Sections du chantier">
+      <ul class="flex gap-6">
+        {% for cle, libelle, nom_icone, suffixe in ONGLETS %}
+          <li>
+            <a href="/chantiers/{{ chantier.id }}{{ suffixe }}"
+               class="-mb-px flex min-h-11 items-center gap-2 border-b-2 text-corps font-medium no-underline hover:no-underline {{ 'border-accent text-texte' if cle == onglet else 'border-transparent text-texte-doux hover:text-texte' }}"
+               {% if cle == onglet %}aria-current="page"{% endif %}>{{ icone(nom_icone, 18) }} {{ libelle }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
+{%- endmacro %}
+
+{# Barre fixe en bas de l'écran sur téléphone. #}
+{% macro navigation_basse(chantier, onglet) -%}
+  <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-bordure bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Sections du chantier">
+    <ul class="mx-auto grid max-w-md grid-cols-3">
+      {% for cle, libelle, nom_icone, suffixe in ONGLETS %}
+        <li>
+          <a href="/chantiers/{{ chantier.id }}{{ suffixe }}"
+             class="flex min-h-14 flex-col items-center justify-center gap-0.5 text-libelle font-medium no-underline hover:no-underline {{ 'text-primaire' if cle == onglet else 'text-texte-doux' }}"
+             {% if cle == onglet %}aria-current="page"{% endif %}>
+            <span class="{{ 'text-accent' if cle == onglet else '' }}">{{ icone(nom_icone, 20) }}</span>{{ libelle }}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </nav>
+{%- endmacro %}

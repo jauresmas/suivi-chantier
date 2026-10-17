@@ -1,0 +1,165 @@
+{#- Composants de la charte. Import : {% from "composants/ui.html" import bouton, badge, … %}
+
+Les classes sont écrites en entier (jamais « bg-{{ ton }} ») : Tailwind ne génère que les
+classes qu'il lit telles quelles dans les templates. -#}
+
+{% macro icone(nom, taille=20, classe="", libelle=None) -%}
+  {{ svg_icone(nom, taille, classe, libelle) }}
+{%- endmacro %}
+
+{# --- Carte : surface blanche, bordure 1 px, coins de 12 px, ombre très légère --- #}
+{% macro carte(classe="", balise="div", attributs={}) -%}
+  <{{ balise }} class="rounded-carte border border-bordure bg-surface shadow-carte {{ classe }}" {{ attributs | xmlattr }}>
+    {{- caller() -}}
+  </{{ balise }}>
+{%- endmacro %}
+
+{# --- Bouton : primaire, secondaire (contour), fantôme, danger ; 44 px de haut au minimum --- #}
+{% set CLASSES_BOUTON = {
+  "primaire": "bg-primaire text-white hover:bg-primaire-fonce",
+  "secondaire": "border border-bordure bg-surface text-texte hover:bg-fond",
+  "fantome": "text-primaire hover:bg-primaire-clair",
+  "danger": "border border-danger/30 bg-surface text-danger hover:bg-danger-fond",
+} %}
+
+{% macro bouton(texte, variante="primaire", href=None, type="button", icone_nom=None, classe="", attributs={}) -%}
+  {%- set classes = "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-corps font-medium no-underline transition-colors duration-150 hover:no-underline disabled:pointer-events-none disabled:opacity-40 " ~ CLASSES_BOUTON[variante] ~ " " ~ classe -%}
+  {%- if href -%}
+    <a href="{{ href }}" class="{{ classes }}" {{ attributs | xmlattr }}>{% if icone_nom %}{{ icone(icone_nom, 18) }}{% endif %}<span>{{ texte }}</span></a>
+  {%- else -%}
+    <button type="{{ type }}" class="{{ classes }}" {{ attributs | xmlattr }}>{% if icone_nom %}{{ icone(icone_nom, 18) }}{% endif %}<span>{{ texte }}</span></button>
+  {%- endif -%}
+{%- endmacro %}
+
+{# --- Badge : fond clair et texte foncé de la même teinte, toujours une icône avec le texte --- #}
+{% set CLASSES_BADGE = {
+  "succes": "bg-succes-fond text-succes",
+  "danger": "bg-danger-fond text-danger",
+  "alerte": "bg-alerte-fond text-alerte",
+  "neutre": "bg-neutre-fond text-neutre",
+  "primaire": "bg-primaire-clair text-primaire",
+} %}
+
+{% macro badge(texte, ton="neutre", icone_nom=None, titre=None, classe="") -%}
+  <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-libelle font-medium whitespace-nowrap {{ CLASSES_BADGE[ton] }} {{ classe }}"{% if titre %} title="{{ titre }}"{% endif %}>
+    {%- if icone_nom %}{{ icone(icone_nom, 14) }}{% endif %}<span>{{ texte }}</span>
+  </span>
+{%- endmacro %}
+
+{# Badge de vérification d'une photo (Badge calculé par app/geo/verification.py), avec la mention
+   « Position du chantier non confirmée » tant que le point de référence n'est pas confirmé. #}
+{% macro badge_photo_ui(b, classe="", classe_mention="text-texte-doux") -%}
+  {{ badge(b.texte, b.ton, b.icone, b.titre, classe) }}
+  {%- if b.mention %}<span class="mt-1 flex items-center gap-1 text-libelle {{ classe_mention }}">{{ icone("info", 14, "shrink-0") }} {{ b.mention }}</span>{% endif %}
+{%- endmacro %}
+
+{# --- Barre de progression : 8 px de haut, pourcentage affiché à côté --- #}
+{% macro barre_progression(pourcentage, libelle="Avancement", afficher_valeur=True) -%}
+  <div class="flex items-center gap-3">
+    <div class="h-2 flex-1 overflow-hidden rounded-full bg-neutre-fond" role="progressbar"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pourcentage }}" aria-label="{{ libelle }}">
+      <div class="h-full rounded-full bg-primaire transition-[width] duration-150" style="width: {{ pourcentage }}%"></div>
+    </div>
+    {% if afficher_valeur %}<span class="w-11 text-right text-libelle font-semibold tabular-nums">{{ pourcentage }} %</span>{% endif %}
+  </div>
+{%- endmacro %}
+
+{# --- Indicateur (chiffre clé) : grand nombre, libellé dessous, détail facultatif --- #}
+{% set CLASSES_INDICATEUR = {
+  None: "text-texte",
+  "succes": "text-succes",
+  "danger": "text-danger",
+  "alerte": "text-alerte",
+} %}
+
+{% macro indicateur(valeur, libelle, ton=None, icone_nom=None, detail=None) -%}
+  {#- Pas de {% call carte %} ici : `caller` désignerait alors le contenu de la carte, pas celui de l'indicateur. -#}
+  <div class="flex flex-col gap-1 rounded-carte border border-bordure bg-surface p-4 shadow-carte">
+    <p class="flex items-center gap-2 text-libelle text-texte-doux">
+      {% if icone_nom %}{{ icone(icone_nom, 16) }}{% endif %}<span>{{ libelle }}</span>
+    </p>
+    <p class="text-xl leading-tight font-semibold tabular-nums sm:text-chiffre {{ CLASSES_INDICATEUR[ton] }}">{{ valeur }}</p>
+    {% if caller %}{{ caller() }}{% endif %}
+    {% if detail %}<p class="text-libelle text-texte-doux">{{ detail }}</p>{% endif %}
+  </div>
+{%- endmacro %}
+
+{# --- État vide : icône, explication, action --- #}
+{% macro etat_vide(icone_nom, titre, texte=None, action_texte=None, action_href=None) -%}
+  <div class="flex flex-col items-center gap-3 rounded-carte border border-dashed border-bordure bg-surface px-6 py-10 text-center">
+    <span class="grid size-12 place-items-center rounded-full bg-primaire-clair text-primaire">{{ icone(icone_nom, 22) }}</span>
+    <p class="text-section">{{ titre }}</p>
+    {% if texte %}<p class="max-w-sm text-corps text-texte-doux">{{ texte }}</p>{% endif %}
+    {% if action_texte %}{{ bouton(action_texte, "primaire", href=action_href) }}{% endif %}
+  </div>
+{%- endmacro %}
+
+{# --- Squelette : blocs gris animés pendant un chargement HTMX --- #}
+{% macro squelette_rapport() -%}
+  <div class="ml-10 animate-pulse rounded-carte border border-bordure bg-surface p-4" aria-hidden="true">
+    <div class="flex items-center gap-3">
+      <div class="size-9 rounded-full bg-neutre-fond"></div>
+      <div class="h-3 w-40 rounded bg-neutre-fond"></div>
+    </div>
+    <div class="mt-4 h-3 w-full rounded bg-neutre-fond"></div>
+    <div class="mt-2 h-3 w-2/3 rounded bg-neutre-fond"></div>
+    <div class="mt-4 grid grid-cols-4 gap-2">
+      {% for _ in range(4) %}<div class="aspect-square rounded-lg bg-neutre-fond"></div>{% endfor %}
+    </div>
+  </div>
+{%- endmacro %}
+
+{# --- Alerte : bandeau avec icône, titre, texte et action facultative --- #}
+{% set CLASSES_ALERTE = {
+  "alerte": "border-alerte/30 bg-alerte-fond text-alerte",
+  "danger": "border-danger/30 bg-danger-fond text-danger",
+  "succes": "border-succes/30 bg-succes-fond text-succes",
+  "primaire": "border-primaire/20 bg-primaire-clair text-primaire",
+  "neutre": "border-bordure bg-neutre-fond text-neutre",
+} %}
+
+{% macro alerte(titre, texte=None, ton="alerte", icone_nom="triangle-alert", action_texte=None, action_href=None, role="status") -%}
+  <div class="flex flex-wrap items-start gap-x-3 gap-y-1 rounded-carte border px-4 py-3 {{ CLASSES_ALERTE[ton] }}" role="{{ role }}">
+    <span class="mt-0.5 shrink-0">{{ icone(icone_nom, 20) }}</span>
+    <div class="min-w-0 flex-1">
+      <p class="font-semibold">{{ titre }}</p>
+      {% if texte %}<p class="text-corps text-texte">{{ texte }}</p>{% endif %}
+      {% if caller %}<div class="text-corps text-texte">{{ caller() }}</div>{% endif %}
+    </div>
+    {% if action_texte %}<a href="{{ action_href }}" class="inline-flex min-h-11 shrink-0 items-center pl-8 font-medium sm:pl-0">{{ action_texte }}</a>{% endif %}
+  </div>
+{%- endmacro %}
+
+{# --- Avatar : initiales de l'auteur --- #}
+{% macro avatar(nom, taille="size-9") -%}
+  <span class="grid {{ taille }} shrink-0 place-items-center rounded-full bg-primaire-clair text-libelle font-semibold text-primaire" aria-hidden="true">{{ initiales(nom) }}</span>
+{%- endmacro %}
+
+{# --- Champ de formulaire avec libellé, aide et erreur --- #}
+{% macro erreur_champ(erreurs, nom) -%}
+  {% if erreurs and erreurs[nom] %}<span class="erreur-champ" id="erreur-{{ nom }}">{{ erreurs[nom] }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro attributs_erreur(erreurs, nom) -%}
+  {% if erreurs and erreurs[nom] %}aria-invalid="true" aria-describedby="erreur-{{ nom }}"{% endif %}
+{%- endmacro %}
+
+{% macro titre_section(texte, action_texte=None, action_href=None, id=None) -%}
+  <div class="flex items-center justify-between gap-3">
+    <h2 class="text-section"{% if id %} id="{{ id }}"{% endif %}>{{ texte }}</h2>
+    {% if action_texte %}<a href="{{ action_href }}" class="text-libelle font-medium">{{ action_texte }}</a>{% endif %}
+  </div>
+{%- endmacro %}
+
+{# --- Pastille de statut d'une étape, avec icône : la couleur ne porte jamais seule l'information --- #}
+{% set APPARENCE_ETAPE = {
+  "a_venir": ("bg-neutre-fond text-neutre", "clock"),
+  "en_cours": ("bg-primaire-clair text-primaire", "construction"),
+  "terminee": ("bg-succes-fond text-succes", "check"),
+  "en_retard": ("bg-danger-fond text-danger", "triangle-alert"),
+} %}
+
+{% macro pastille_etape(etat) -%}
+  {% set classes, nom_icone = APPARENCE_ETAPE[etat.statut.value] %}
+  <span class="grid size-7 shrink-0 place-items-center rounded-full {{ classes }}" title="{{ etat.libelle }}">{{ icone(nom_icone, 14) }}<span class="sr-only">{{ etat.libelle }}</span></span>
+{%- endmacro %}

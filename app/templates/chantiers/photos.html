@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import etat_vide %}
+{% from "composants/chantier.html" import entete_chantier, navigation_basse %}
+
+{% block title %}Photos · {{ chantier.nom }}{% endblock %}
+{% block head %}<script src="/static/js/vendor/htmx-2.0.11.min.js" defer></script>{% endblock %}
+{% block marge_basse %}pb-24 lg:pb-8{% endblock %}
+
+{% block content %}
+{% set requete = filtres.parametres() %}
+{% set url_page = "/chantiers/%s/photos" % chantier.id %}
+{% set url_bloc = url_page %}
+{% set cible = "zone-photos" %}
+<div class="grid gap-6">
+  {{ entete_chantier(chantier, onglet) }}
+
+  <section id="zone-photos" class="grid gap-4" aria-labelledby="titre-photos">
+    <h2 id="titre-photos" class="text-section">Photos des rapports publiés</h2>
+    {% include "chantiers/_filtres.html" %}
+    {% if photos %}
+      <ul class="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6" data-visionneuse>
+        {% include "chantiers/_photos_bloc.html" %}
+      </ul>
+    {% elif filtres.actifs %}
+      {{ etat_vide("funnel", "Aucune photo pour ces filtres", "Élargissez la période ou retirez un filtre.", "Effacer les filtres", url_page) }}
+    {% else %}
+      {{ etat_vide("images", "Aucune photo pour l'instant", "Les photos des rapports publiés apparaîtront ici.") }}
+    {% endif %}
+  </section>
+</div>
+{% include "composants/visionneuse.html" %}
+<script type="module" src="/static/js/visionneuse.js"></script>
+{% endblock %}
+
+{% block navigation_basse %}{{ navigation_basse(chantier, onglet) }}{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone, bouton, alerte %}
+
+{% block title %}Lien de relevé · {{ chantier.nom }}{% endblock %}
+
+{% block content %}
+<div class="mx-auto grid max-w-xl gap-6">
+  <a href="/chantiers/{{ chantier.id }}/position" class="inline-flex min-h-11 w-fit items-center gap-1 text-libelle text-texte-doux no-underline hover:text-texte hover:no-underline">{{ icone("chevron-left", 16) }} Position du chantier</a>
+  <section class="grid gap-4 rounded-carte border border-bordure bg-surface p-5 shadow-carte sm:p-6">
+    <span class="grid size-11 place-items-center rounded-full bg-succes-fond text-succes">{{ icone("check", 22) }}</span>
+    <h1 class="text-titre">Lien de relevé prêt</h1>
+    <p class="text-corps text-texte-doux">
+      Envoyez ce lien à <strong class="text-texte">{{ releve.nom_releveur }}</strong>. Il est valable jusqu'au
+      <span class="tabular-nums">{{ releve.expire_le | date_courte }}</span> et ne peut servir qu'une fois.
+    </p>
+    <label class="etiquette">Lien à partager
+      <input id="lien" class="champ font-mono text-libelle" value="{{ lien }}" readonly>
+    </label>
+    <div class="grid gap-3 sm:grid-cols-2">
+      {{ bouton("Envoyer par WhatsApp", "primaire", href=lien_whatsapp, icone_nom="send", attributs={"target": "_blank", "rel": "noopener"}) }}
+      {{ bouton("Copier le lien", "secondaire", attributs={"data-copier": "#lien"}, icone_nom="copy") }}
+    </div>
+  </section>
+  {{ alerte("Ce lien ne sera plus affiché", "Une fois cette page quittée, il n'est plus possible de le revoir. S'il est perdu, annulez-le et créez-en un nouveau.", "neutre", "info") }}
+</div>
+<script src="/static/js/copier.js" defer></script>
+{% endblock %}

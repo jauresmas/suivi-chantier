@@ -1,0 +1,53 @@
+{#- Un bloc de rapports de la timeline (éléments <li>), suivi si besoin du déclencheur du bloc suivant. -#}
+{% from "composants/ui.html" import icone, badge, avatar, squelette_rapport %}
+{% from "composants/photo.html" import vignette %}
+
+{% for rapport in rapports %}
+  {% set photos = rapport.photos | select("garder_photo", filtres) | list %}
+  <li class="relative pl-9">
+    <span class="absolute top-6 left-[7px] size-3.5 rounded-full border-[3px] border-fond bg-primaire" aria-hidden="true"></span>
+    <article class="rounded-carte border border-bordure bg-surface p-4 shadow-carte">
+      <header class="flex items-start gap-3">
+        {{ avatar(rapport.auteur.nom_complet if rapport.auteur else None) }}
+        <div class="min-w-0 flex-1">
+          <p class="truncate font-medium">{{ rapport.auteur.nom_complet if rapport.auteur else "Compte supprimé" }}</p>
+          <p class="text-libelle text-texte-doux"><time datetime="{{ rapport.publie_le.isoformat() }}" title="{{ rapport.publie_le | date_longue }}">{{ rapport.publie_le | date_relative | capitalize }}</time></p>
+        </div>
+        {% if rapport.etape %}{{ badge(libelle_etape(rapport.etape), "primaire", "list-checks") }}{% endif %}
+      </header>
+
+      {% if rapport.texte %}
+        <p class="mt-3 line-clamp-3 whitespace-pre-line">{{ rapport.texte }}</p>
+      {% endif %}
+
+      {% if photos %}
+        <div class="mt-3 grid grid-cols-4 gap-2" data-visionneuse>
+          {% for photo in photos %}
+            {% if loop.index <= 3 or (loop.index == 4 and photos | length == 4) %}
+              {{ vignette(photo, rapport.etape, chantier) }}
+            {% elif loop.index == 4 %}
+              {{ vignette(photo, rapport.etape, chantier, texte_dessus="+" ~ (photos | length - 3)) }}
+            {% else %}
+              {{ vignette(photo, rapport.etape, chantier, cachee=True) }}
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <footer class="mt-3 flex items-center justify-between gap-3 text-libelle text-texte-doux">
+        <span class="flex items-center gap-1.5">{{ icone("images", 14) }} {{ photos | length }} photo{{ "s" if photos | length > 1 }}{% if filtres.alertes %} à vérifier{% endif %}</span>
+        <a href="/rapports/{{ rapport.id }}" class="inline-flex min-h-11 items-center gap-1 font-medium">{{ "Lire la suite" if rapport.texte and rapport.texte | length > 180 else "Voir le rapport" }} {{ icone("chevron-right", 14) }}</a>
+      </footer>
+    </article>
+  </li>
+{% endfor %}
+
+{% if suivant %}
+  {% set requete = filtres.parametres() %}
+  <li class="grid gap-4" hx-get="/chantiers/{{ chantier.id }}/timeline?{{ requete ~ '&' if requete }}page={{ page + 1 }}"
+      hx-trigger="revealed" hx-swap="outerHTML" aria-busy="true">
+    <span class="sr-only">Chargement des rapports suivants…</span>
+    {{ squelette_rapport() }}
+    {{ squelette_rapport() }}
+  </li>
+{% endif %}

@@ -1,0 +1,15 @@
+{% extends "_base.html" %}
+{% import "_elements.html" as e %}
+{% block apercu %}Ce lien est valable 1 heure et ne sert qu'une fois.{% endblock %}
+{% block contenu %}
+  {{ e.titre("Réinitialisation de votre mot de passe") }}
+  {% call e.paragraphe() %}Bonjour {{ destinataire.nom_complet }},{% endcall %}
+  {% call e.paragraphe() %}
+    Vous avez demandé à choisir un nouveau mot de passe pour votre compte Suivi Chantier.
+    Ce lien est valable <strong>1 heure</strong> et ne sert qu'une fois.
+  {% endcall %}
+  {{ e.bouton("Choisir un nouveau mot de passe", lien) }}
+  <p style="margin:16px 0 0;font-size:14px;line-height:20px;color:{{ c.texte_doux }};">
+    Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail : votre mot de passe ne change pas.
+  </p>
+{% endblock %}

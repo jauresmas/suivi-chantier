@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import etat_vide %}
+
+{% block title %}Erreur {{ code }} · Suivi Chantier{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-lg py-10">
+  {{ etat_vide("circle-help", message, "Code " ~ code, "Retour à l'accueil", "/") }}
+</div>
+{% endblock %}

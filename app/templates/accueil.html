@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import bouton, icone %}
+
+{% block content %}
+<section class="mx-auto flex max-w-3xl flex-col items-center gap-6 py-10 text-center sm:py-20">
+  <span class="inline-flex items-center gap-2 rounded-full border border-bordure bg-surface px-3 py-1 text-libelle text-texte-doux">
+    {{ icone("map-pin", 14) }} Pensé pour les chantiers au Bénin, suivis depuis l'étranger
+  </span>
+  <h1 class="text-3xl font-semibold tracking-tight text-balance sm:text-5xl">Suivez la construction de votre maison, où que vous soyez</h1>
+  <p class="max-w-xl text-corps text-texte-doux sm:text-lg">
+    Votre chef de chantier envoie ses rapports et ses photos depuis le terrain. Chaque photo garde sa position GPS :
+    vous voyez si elle a bien été prise sur votre chantier.
+  </p>
+  <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+    {{ bouton("Créer un compte", "primaire", href="/inscription") }}
+    {{ bouton("Se connecter", "secondaire", href="/connexion") }}
+  </div>
+</section>
+
+<section class="mx-auto grid max-w-5xl gap-4 pb-10 sm:grid-cols-3">
+  {% for nom_icone, titre, texte in [
+    ("camera", "Photos géolocalisées", "Position GPS relevée au moment de la prise de vue, comparée au chantier."),
+    ("gauge", "Avancement pondéré", "Chaque étape pèse selon son importance dans la construction."),
+    ("clock", "Nouvelles régulières", "Un rapport publié ne se modifie plus : l'historique reste fiable."),
+  ] %}
+    <div class="rounded-carte border border-bordure bg-surface p-5 shadow-carte">
+      <span class="grid size-10 place-items-center rounded-lg bg-primaire-clair text-primaire">{{ icone(nom_icone, 20) }}</span>
+      <p class="mt-3 text-section">{{ titre }}</p>
+      <p class="mt-1 text-corps text-texte-doux">{{ texte }}</p>
+    </div>
+  {% endfor %}
+</section>
+{% endblock %}

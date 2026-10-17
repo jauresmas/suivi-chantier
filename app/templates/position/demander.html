@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone, bouton, alerte %}
+
+{% set pour_le_chef = type_releveur.value == "chef_chantier" %}
+{% block title %}Demander un relevé · {{ chantier.nom }}{% endblock %}
+
+{% block content %}
+<div class="mx-auto grid max-w-xl gap-6">
+  <div class="grid gap-2">
+    <a href="/chantiers/{{ chantier.id }}/position" class="inline-flex min-h-11 w-fit items-center gap-1 text-libelle text-texte-doux no-underline hover:text-texte hover:no-underline">{{ icone("chevron-left", 16) }} Position du chantier</a>
+    <h1 class="text-titre">{{ "Demander un relevé au chef de chantier" if pour_le_chef else "Demander un relevé à un proche" }}</h1>
+  </div>
+
+  {% if pour_le_chef %}
+    {{ alerte("Un relevé du chef de chantier est moins fiable", "La position servira à vérifier ses propres photos : elle sera marquée « Moyen ». Préférez une personne de confiance qui ne travaille pas sur le chantier.", "alerte", "shield-alert") }}
+  {% else %}
+    {{ alerte("Choisissez une personne de confiance", "Confiez ce relevé à un proche, de préférence pas à votre chef de chantier : la position sert à vérifier ses photos.", "alerte", "shield-alert") }}
+  {% endif %}
+
+  <section class="grid gap-3 rounded-carte border border-bordure bg-surface p-5 shadow-carte" aria-labelledby="titre-etapes-releve">
+    <h2 class="text-section" id="titre-etapes-releve">Comment ça marche</h2>
+    <ol class="grid gap-3 text-corps">
+      <li class="flex gap-3"><span class="grid size-7 shrink-0 place-items-center rounded-full bg-primaire-clair text-libelle font-semibold text-primaire">1</span>Vous envoyez un lien par WhatsApp (aucun compte à créer).</li>
+      <li class="flex gap-3"><span class="grid size-7 shrink-0 place-items-center rounded-full bg-primaire-clair text-libelle font-semibold text-primaire">2</span>La personne l'ouvre au milieu du terrain : son téléphone mesure la position pendant une minute.</li>
+      <li class="flex gap-3"><span class="grid size-7 shrink-0 place-items-center rounded-full bg-primaire-clair text-libelle font-semibold text-primaire">3</span>Vous vérifiez le relevé sur une carte, puis vous le validez.</li>
+    </ol>
+  </section>
+
+  <form method="post" action="/chantiers/{{ chantier.id }}/position/releves" class="grid gap-4 rounded-carte border border-bordure bg-surface p-5 shadow-carte">
+    {{ champ_csrf(request) }}
+    <input type="hidden" name="type_releveur" value="{{ type_releveur.value }}">
+    {% if erreur %}{{ alerte(erreur, ton="danger", icone_nom="circle-x", role="alert") }}{% endif %}
+    <label class="etiquette">{{ "Nom du chef de chantier" if pour_le_chef else "Nom du proche" }}
+      <input class="champ" name="nom_releveur" value="{{ valeurs.nom_releveur }}" maxlength="150" required autocomplete="off" placeholder="{{ 'Rodrigue' if pour_le_chef else 'Tante Afi' }}">
+    </label>
+    {% if not pour_le_chef %}
+      <label class="etiquette">Lien de parenté <span class="aide">Facultatif</span>
+        <input class="champ" name="lien_releveur" value="{{ valeurs.lien_releveur }}" maxlength="100" autocomplete="off" placeholder="tante, cousin, amie…">
+      </label>
+    {% endif %}
+    <p class="aide">Le lien sera valable {{ duree_h }} heures et ne servira qu'une fois.</p>
+    {{ bouton("Créer le lien", "primaire", type="submit", icone_nom="send") }}
+  </form>
+
+  <p class="text-center text-libelle">
+    {% if pour_le_chef %}
+      <a href="/chantiers/{{ chantier.id }}/position/demander">Demander plutôt à un proche</a>
+    {% else %}
+      <a href="/chantiers/{{ chantier.id }}/position/demander?type=chef_chantier" class="text-texte-doux">Personne sur place ? Demander au chef de chantier</a>
+    {% endif %}
+  </p>
+</div>
+{% endblock %}

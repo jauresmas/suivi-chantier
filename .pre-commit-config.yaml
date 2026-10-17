@@ -1,0 +1,9 @@
+# Facultatif : Ruff corrige et formate le code avant chaque commit, comme le vérifie la CI.
+# Installation : pip install pre-commit, puis pre-commit install (voir le README).
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.9 # même version que requirements-dev.txt
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format

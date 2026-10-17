@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone %}
+
+{#- Page ouverte sans compte, par une personne peu habituée au numérique : grands boutons, phrases
+courtes, aucun mot technique. Un seul écran visible à la fois (releve.js). -#}
+
+{% set BOUTON = "flex min-h-14 w-full items-center justify-center gap-2 rounded-lg px-5 text-lg font-semibold transition-colors duration-150 disabled:opacity-40" %}
+{% set BOUTON_PRINCIPAL = BOUTON ~ " bg-primaire text-white hover:bg-primaire-fonce" %}
+{% set BOUTON_SECONDAIRE = BOUTON ~ " border border-bordure bg-surface text-texte hover:bg-fond" %}
+
+{% block title %}Aider {{ proprietaire }} · Suivi Chantier{% endblock %}
+{% block head %}
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <meta name="csrf-token" content="{{ jeton_csrf(request) }}">
+{% endblock %}
+{% block compte %}{% endblock %}
+
+{% block content %}
+<div id="releve" class="mx-auto grid max-w-md gap-6 text-lg" data-url="/releve/{{ jeton }}"
+     data-precision-max="{{ precision_max_m }}" data-photos-max="{{ photos_max }}">
+
+  {# --- 1. Accueil et consignes --- #}
+  <section data-ecran="accueil" class="grid gap-6">
+    <div class="grid gap-2">
+      <h1 class="text-titre" tabindex="-1">Bonjour !</h1>
+      <p><strong>{{ proprietaire }}</strong> vous demande de l'aider à localiser son terrain <strong>« {{ chantier.nom }} »</strong>.</p>
+    </div>
+    <ol class="grid gap-3" aria-label="Avant de commencer">
+      <li class="flex items-center gap-4 rounded-carte border border-bordure bg-surface p-4 shadow-carte">
+        <span class="grid size-14 shrink-0 place-items-center rounded-full bg-primaire-clair text-primaire">{{ icone("footprints", 28) }}</span>
+        <span>Allez <strong>au milieu du terrain</strong></span>
+      </li>
+      <li class="flex items-center gap-4 rounded-carte border border-bordure bg-surface p-4 shadow-carte">
+        <span class="grid size-14 shrink-0 place-items-center rounded-full bg-primaire-clair text-primaire">{{ icone("trees", 28) }}</span>
+        <span>Restez <strong>dehors</strong>, loin des murs et des arbres</span>
+      </li>
+      <li class="flex items-center gap-4 rounded-carte border border-bordure bg-surface p-4 shadow-carte">
+        <span class="grid size-14 shrink-0 place-items-center rounded-full bg-primaire-clair text-primaire">{{ icone("smartphone", 28) }}</span>
+        <span>Gardez le téléphone <strong>à la main, sans bouger</strong></span>
+      </li>
+    </ol>
+    <button type="button" id="commencer" class="{{ BOUTON_PRINCIPAL }}">{{ icone("map-pin", 22) }} Je suis sur le terrain</button>
+    <p class="text-corps text-texte-doux">Cela prend environ 2 minutes. Le téléphone va vous demander s'il peut utiliser votre position : appuyez sur <strong>« Autoriser »</strong>.</p>
+  </section>
+
+  {# --- Position refusée ou désactivée : comment l'autoriser --- #}
+  <section data-ecran="autorisation" class="grid gap-5" hidden>
+    <span class="grid size-14 place-items-center rounded-full bg-alerte-fond text-alerte">{{ icone("map-pin-off", 28) }}</span>
+    <h1 class="text-titre" tabindex="-1">Le téléphone ne donne pas sa position</h1>
+    <p>Pour continuer, il faut autoriser ce site à utiliser la position du téléphone.</p>
+    <details class="rounded-carte border border-bordure bg-surface p-4 shadow-carte" open>
+      <summary class="flex min-h-11 cursor-pointer items-center font-semibold">Sur un téléphone Android</summary>
+      <ol class="mt-2 grid list-decimal gap-2 pl-6 text-corps">
+        <li>Touchez le petit <strong>cadenas</strong> (ou les réglages) à gauche de l'adresse du site, en haut de l'écran.</li>
+        <li>Touchez <strong>Autorisations</strong>, puis <strong>Position</strong>.</li>
+        <li>Choisissez <strong>Autoriser</strong>.</li>
+        <li>Vérifiez aussi que la <strong>localisation</strong> du téléphone est activée : faites glisser le haut de l'écran vers le bas.</li>
+      </ol>
+    </details>
+    <details class="rounded-carte border border-bordure bg-surface p-4 shadow-carte">
+      <summary class="flex min-h-11 cursor-pointer items-center font-semibold">Sur un iPhone</summary>
+      <ol class="mt-2 grid list-decimal gap-2 pl-6 text-corps">
+        <li>Ouvrez <strong>Réglages</strong>, puis <strong>Confidentialité et sécurité</strong>.</li>
+        <li>Touchez <strong>Service de localisation</strong> et activez-le.</li>
+        <li>Plus bas, touchez <strong>Sites web Safari</strong> et choisissez <strong>Lorsque l'app est active</strong>.</li>
+        <li>Revenez ici et rechargez la page.</li>
+      </ol>
+    </details>
+    <button type="button" data-action="recommencer" class="{{ BOUTON_PRINCIPAL }}">{{ icone("rotate-ccw", 22) }} Réessayer</button>
+  </section>
+
+  {# --- 2. Mesure pendant 60 secondes --- #}
+  <section data-ecran="mesure" class="grid justify-items-center gap-5 text-center" hidden>
+    <h1 class="text-titre" tabindex="-1">Ne bougez plus…</h1>
+    <p id="consigne-mesure">Recherche de votre position…</p>
+    <div class="relative size-56">
+      <svg viewBox="0 0 120 120" class="size-full -rotate-90" aria-hidden="true">
+        <circle cx="60" cy="60" r="52" fill="none" stroke-width="10" class="stroke-neutre-fond"></circle>
+        <circle id="progression" cx="60" cy="60" r="52" fill="none" stroke-width="10" stroke-linecap="round"
+                class="stroke-primaire transition-[stroke-dashoffset] duration-300" stroke-dasharray="326.73" stroke-dashoffset="326.73"></circle>
+      </svg>
+      <p class="absolute inset-0 grid place-content-center">
+        <span id="secondes" class="text-5xl font-semibold tabular-nums">60</span>
+        <span class="text-corps text-texte-doux">secondes</span>
+      </p>
+    </div>
+    <p id="signal" class="flex min-h-8 items-center gap-2 font-semibold text-texte-doux" aria-live="polite">Signal : recherche…</p>
+    <button type="button" id="terminer" class="{{ BOUTON_SECONDAIRE }}" hidden>{{ icone("check", 22) }} Terminer maintenant</button>
+  </section>
+
+  {# --- Envoi --- #}
+  <section data-ecran="envoi" class="grid justify-items-center gap-5 py-6 text-center" hidden>
+    <span class="size-12 animate-spin rounded-full border-4 border-neutre-fond border-t-primaire" aria-hidden="true"></span>
+    <h1 class="text-titre" tabindex="-1">Envoi en cours…</h1>
+  </section>
+
+  <section data-ecran="hors-ligne" class="grid gap-5" hidden>
+    <span class="grid size-14 place-items-center rounded-full bg-alerte-fond text-alerte">{{ icone("info", 28) }}</span>
+    <h1 class="text-titre" tabindex="-1">Pas de connexion internet</h1>
+    <p>Votre relevé est gardé sur le téléphone. Vérifiez la connexion, puis réessayez.</p>
+    <button type="button" data-action="renvoyer" class="{{ BOUTON_PRINCIPAL }}">{{ icone("send", 22) }} Réessayer l'envoi</button>
+  </section>
+
+  {# --- Signal faible : recommencer ; après 2 échecs, envoyer quand même --- #}
+  <section data-ecran="faible" class="grid gap-5" hidden>
+    <span class="grid size-14 place-items-center rounded-full bg-alerte-fond text-alerte">{{ icone("footprints", 28) }}</span>
+    <h1 class="text-titre" tabindex="-1">Le signal est faible ici</h1>
+    <p>Essayez de vous déplacer de quelques pas vers un endroit plus dégagé, loin des murs et des arbres.</p>
+    <button type="button" data-action="recommencer" class="{{ BOUTON_PRINCIPAL }}">{{ icone("rotate-ccw", 22) }} Recommencer</button>
+    <button type="button" id="envoyer-quand-meme" class="{{ BOUTON_SECONDAIRE }}" hidden>{{ icone("send", 22) }} Envoyer quand même</button>
+  </section>
+
+  {# --- 3. Photos du terrain (facultatives) --- #}
+  <section data-ecran="photos" class="grid gap-5" hidden>
+    <span class="grid size-14 place-items-center rounded-full bg-succes-fond text-succes">{{ icone("check", 28) }}</span>
+    <h1 class="text-titre" tabindex="-1">C'est enregistré !</h1>
+    <p>Pouvez-vous prendre <strong>1 ou 2 photos</strong> du terrain ? Si possible, les bornes ou un repère bien visible.</p>
+    <input id="photo-terrain" class="peer sr-only" type="file" accept="image/*" capture="environment">
+    <label for="photo-terrain" id="prendre-photo" class="{{ BOUTON_PRINCIPAL }} cursor-pointer peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primaire">{{ icone("camera", 22) }} Prendre une photo</label>
+    <ul id="photos-envoyees" class="grid grid-cols-3 gap-2" aria-label="Photos envoyées"></ul>
+    <p id="etat-photos" class="text-corps text-texte-doux" aria-live="polite"></p>
+    <button type="button" id="terminer-photos" class="{{ BOUTON_SECONDAIRE }}">Passer cette étape</button>
+  </section>
+
+  {# --- 4. Merci --- #}
+  <section data-ecran="merci" class="grid justify-items-center gap-4 py-6 text-center" hidden>
+    <span class="grid size-20 place-items-center rounded-full bg-succes-fond text-succes">{{ icone("circle-check-big", 40) }}</span>
+    <h1 class="text-titre" tabindex="-1">Merci !</h1>
+    <p><strong>{{ proprietaire }}</strong> a bien reçu la position.</p>
+    <p class="text-corps text-texte-doux">Vous pouvez fermer cette page.</p>
+  </section>
+
+  {# --- Problèmes sans solution sur ce téléphone --- #}
+  <section data-ecran="impossible" class="grid gap-5" hidden>
+    <span class="grid size-14 place-items-center rounded-full bg-alerte-fond text-alerte">{{ icone("info", 28) }}</span>
+    <h1 class="text-titre" tabindex="-1" id="titre-impossible">Ce téléphone ne peut pas donner sa position</h1>
+    <p id="texte-impossible">Essayez avec un autre téléphone, ou ouvrez le lien dans Chrome ou Safari.</p>
+  </section>
+
+  <noscript><p class="rounded-carte border border-alerte/30 bg-alerte-fond p-4">Ouvrez ce lien dans Chrome ou Safari pour continuer.</p></noscript>
+</div>
+<script type="module" src="/static/js/releve.js"></script>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "auth/_cadre.html" %}
+{% from "composants/ui.html" import bouton, alerte %}
+
+{% block title %}Connexion · Suivi Chantier{% endblock %}
+
+{% block formulaire %}
+<h1 class="mb-6 text-titre">Connexion</h1>
+{% if mot_de_passe_modifie %}<div class="mb-4">{{ alerte("Mot de passe modifié", "Connectez-vous avec votre nouveau mot de passe.", "succes", "circle-check") }}</div>{% endif %}
+{% if erreur %}<div class="mb-4">{{ alerte(erreur, ton="danger", icone_nom="circle-x", role="alert") }}</div>{% endif %}
+
+<form class="grid gap-4" method="post" action="/connexion">
+  {{ champ_csrf(request) }}
+  <input type="hidden" name="suivant" value="{{ suivant }}">
+  <label class="etiquette">Adresse e-mail
+    <input class="champ" type="email" name="email" value="{{ email }}" autocomplete="email" inputmode="email" required>
+  </label>
+  <label class="etiquette">Mot de passe
+    <input class="champ" type="password" name="mot_de_passe" autocomplete="current-password" required>
+  </label>
+  <a href="/mot-de-passe-oublie" class="-mt-2 inline-flex min-h-11 w-fit items-center justify-self-end text-libelle font-medium">Mot de passe oublié ?</a>
+  {{ bouton("Se connecter", "primaire", type="submit", classe="mt-2 w-full") }}
+</form>
+{% endblock %}
+
+{% block pied %}
+<p class="text-center text-corps text-texte-doux">
+  Pas encore de compte ? <a href="/inscription{% if suivant %}?suivant={{ suivant | urlencode }}{% endif %}" class="font-medium">Créer un compte</a>
+</p>
+{% endblock %}

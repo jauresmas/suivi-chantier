@@ -1,0 +1,9 @@
+# Outils de développement, de test et de CI, en plus de requirements.txt :
+#   pip install -r requirements-dev.txt
+-r requirements.txt
+
+pytest==9.1.1
+pytest-cov==7.1.0
+ruff==0.16.9
+# Client HTTP du TestClient de FastAPI (Starlette essaie httpx2, successeur de httpx, en premier)
+httpx2==2.13.1

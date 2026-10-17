@@ -1,0 +1,71 @@
+{#- Position du chantier : niveau de fiabilité (app/geo/fiabilite.py) et encart du tableau de bord. -#}
+{% from "composants/ui.html" import icone, bouton, badge, titre_section %}
+
+{% set CLASSES_PASTILLE = {
+  "succes": "bg-succes-fond text-succes",
+  "alerte": "bg-alerte-fond text-alerte",
+  "neutre": "bg-neutre-fond text-neutre",
+  "primaire": "bg-primaire-clair text-primaire",
+} %}
+{% set CLASSES_BARRE = {
+  "succes": "bg-succes",
+  "alerte": "bg-alerte",
+  "neutre": "bg-neutre",
+  "primaire": "bg-primaire",
+} %}
+{% set HAUTEURS_BARRE = ["h-2", "h-3", "h-4", "h-5", "h-6"] %}
+
+{# Jauge à 5 barres, comme un indicateur de réseau ; le niveau est aussi écrit en toutes lettres. #}
+{% macro jauge_fiabilite(f) -%}
+  <span class="inline-flex items-end gap-0.5" aria-hidden="true">
+    {%- for hauteur in HAUTEURS_BARRE -%}
+      <span class="w-1.5 rounded-sm {{ hauteur }} {{ CLASSES_BARRE[f.ton] if loop.index <= f.rang else 'bg-bordure' }}"></span>
+    {%- endfor -%}
+  </span>
+{%- endmacro %}
+
+{% macro resume_fiabilite(f, taille_pastille="size-10") -%}
+  <div class="flex items-start gap-3">
+    <span class="grid {{ taille_pastille }} shrink-0 place-items-center rounded-full {{ CLASSES_PASTILLE[f.ton] }}">{{ icone(f.icone, 20) }}</span>
+    <div class="min-w-0 flex-1">
+      <p class="font-semibold">{{ f.libelle }}</p>
+      {% if f.niveau %}
+        <p class="mt-1 flex items-center gap-2 text-libelle text-texte-doux">Fiabilité {{ jauge_fiabilite(f) }} <span class="font-medium text-texte">{{ f.niveau }}</span></p>
+      {% endif %}
+    </div>
+  </div>
+{%- endmacro %}
+
+{# Encart du tableau de bord. a_valider / en_attente : relevés du propriétaire (None pour le chef). #}
+{% macro encart_position(chantier, f, est_proprietaire, a_valider=None, en_attente=None) -%}
+  {% set statut = chantier.statut_position.value %}
+  <section class="rounded-carte border border-bordure bg-surface p-4 shadow-carte" aria-labelledby="titre-position">
+    {{ titre_section("Position du chantier", "Relevés et historique" if est_proprietaire else None, "/chantiers/%s/position" % chantier.id, id="titre-position") }}
+    <div class="mt-3">{{ resume_fiabilite(f) }}</div>
+    <p class="mt-2 text-libelle text-texte-doux">
+      {%- if statut == "non_definie" -%}
+        Tant qu'elle n'est pas définie, les photos ne peuvent pas être vérifiées.
+      {%- elif statut == "confirmee" -%}
+        Confirmée le {{ chantier.position_confirmee_le | date_longue }}. Elle sert de référence pour vérifier les photos.
+      {%- else -%}
+        Pas encore confirmée sur place : la vérification des photos reste indicative.
+      {%- endif -%}
+    </p>
+    {% if est_proprietaire %}
+      <div class="mt-3 grid gap-2">
+        {% if a_valider %}
+          {{ bouton("Vérifier le relevé de " ~ a_valider.nom_releveur, "primaire", href="/chantiers/%s/position/releves/%s" % (chantier.id, a_valider.id), icone_nom="map-pin") }}
+        {% elif en_attente %}
+          <p class="flex items-start gap-2 rounded-lg bg-neutre-fond px-3 py-2 text-libelle">{{ icone("clock", 16, "mt-0.5 shrink-0") }}
+            <span>Lien envoyé à <strong>{{ en_attente.nom_releveur }}</strong>, valable jusqu'au <span class="tabular-nums">{{ en_attente.expire_le | date_courte }}</span>.</span>
+          </p>
+        {% elif statut != "confirmee" or chantier.source_position.value == "releve_chef" %}
+          {{ bouton("Demander un relevé à un proche", "primaire" if statut != "confirmee" else "secondaire", href="/chantiers/%s/position/demander" % chantier.id, icone_nom="send") }}
+        {% endif %}
+        {% if statut == "non_definie" and not a_valider %}
+          {{ bouton("Placer moi-même sur la carte", "fantome", href="/chantiers/%s/modifier" % chantier.id, icone_nom="map-pin") }}
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+{%- endmacro %}

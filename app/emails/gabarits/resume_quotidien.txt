@@ -1,0 +1,21 @@
+{% extends "_base.txt" %}
+{% block contenu %}
+{% if avertissements %}
+⚠ PHOTOS À VÉRIFIER
+{% for ligne in avertissements %}
+- {{ ligne }}
+{% endfor %}
+
+{% endif %}
+Résumé du jour — « {{ chantier.nom }} »
+{{ rapports | length }} rapport{{ "s" if rapports | length > 1 }} publié{{ "s" if rapports | length > 1 }} depuis le dernier résumé.
+{% for r in rapports %}
+
+----------
+{% with note_position=None %}{% include "_rapport.txt" %}{% endwith %}
+{% endfor %}
+{% if note_position %}
+
+{{ note_position }}
+{% endif %}
+{% endblock %}

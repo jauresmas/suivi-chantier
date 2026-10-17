@@ -1,0 +1,21 @@
+{% extends "_base.txt" %}
+{% set ch = changement %}
+{% macro coordonnees(position) -%}
+  {%- if position -%}{{ "%.6f" | format(position[0]) }}, {{ "%.6f" | format(position[1]) }}{%- else -%}aucune{%- endif -%}
+{%- endmacro %}
+{% block contenu %}
+La position du chantier « {{ chantier.nom }} » a été modifiée.
+C'est elle qui sert à vérifier où les photos ont été prises.
+
+Modifiée par : {{ ch.auteur }}
+Date : {{ ch.entree.cree_le | date_longue }}
+Ancienne position : {{ coordonnees(ch.ancienne) }}
+Nouvelle position : {{ coordonnees(ch.nouvelle) }}
+Déplacement : {{ (ch.deplacement_m | distance) if ch.deplacement_m is not none else "première position" }}
+Source : {{ ch.libelle }}{% if ch.releveur %} ({{ ch.releveur }}){% endif %}
+
+
+Si ce changement ne vient ni de vous ni d'un autre propriétaire du chantier, consultez l'historique de la position et changez votre mot de passe.
+
+Voir l'historique : {{ lien }}
+{% endblock %}

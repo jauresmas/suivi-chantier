@@ -1,0 +1,8 @@
+{# MapLibre GL JS : version épinglée, intégrité vérifiée (SRI). La 6.x n'existe qu'en modules ES.
+   Chargés sans bloquer l'affichage : la synthèse du chantier s'affiche avant la carte, même en 3G lente. #}
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css"
+      integrity="sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK" crossorigin="anonymous"
+      media="print" onload="this.media='all'" fetchpriority="low">
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js" defer fetchpriority="low"
+        integrity="sha384-5+cfbwT0iiub6VsQAdn6yz16nr6sDiQoHx6tm4O8OVYXHYOxcffFmCJBL0dgdvGp" crossorigin="anonymous"></script>
+<script type="application/json" id="config-carte">{{ config_carte | tojson }}</script>

@@ -1,0 +1,21 @@
+# Mises à jour automatiques proposées en pull request, vérifiées par la CI avant fusion.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/" # requirements.txt et requirements-dev.txt
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Africa/Porto-Novo
+    # Les versions mineures et correctives sont regroupées : une seule pull request par semaine.
+    groups:
+      mineures:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Africa/Porto-Novo

@@ -1,0 +1,176 @@
+/* Charte graphique « Suivi Chantier » — source Tailwind CSS v4.
+ *
+ * Compilation (exécutable autonome, sans Node.js) :
+ *   tailwindcss -i app/static/css/source.css -o app/static/css/app.css --minify
+ *
+ * Toutes les couleurs et polices sont définies ici, dans @theme : les templates n'utilisent
+ * que ces noms (bg-primaire, text-texte-doux…), jamais de valeur codée en dur. Un futur mode
+ * sombre n'aura qu'à redéfinir ces variables.
+ */
+
+@import "tailwindcss" source(none);
+@source "../../templates";
+@source "../js";
+@source "../../icones.py";
+
+/* Inter, hébergée localement (ni Google Fonts ni appel externe), découpée par alphabet. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/static/fonts/inter-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/static/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@theme {
+  /* Seules les couleurs de la charte existent. */
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-fond: #f8fafc;
+  --color-surface: #ffffff;
+  --color-bordure: #e2e8f0;
+  --color-texte: #0f172a;
+  --color-texte-doux: #64748b;
+  --color-primaire: #1e3a5f; /* confiance : boutons, liens, barre d'avancement */
+  --color-primaire-fonce: #152b47;
+  --color-primaire-clair: #e8eef6;
+  --color-accent: #c2410c; /* terre latérite : touches ponctuelles uniquement */
+  --color-succes: #15803d;
+  --color-succes-fond: #dcfce7;
+  --color-danger: #b91c1c;
+  --color-danger-fond: #fee2e2;
+  --color-alerte: #b45309;
+  --color-alerte-fond: #fef3c7;
+  --color-neutre: #475569;
+  --color-neutre-fond: #f1f5f9;
+  --color-nuit: #0b1220; /* fond de la visionneuse photo */
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Échelle : titres de page 24 px, sections 16 px, texte 15 px, libellés 13 px. */
+  --text-titre: 1.5rem;
+  --text-titre--line-height: 2rem;
+  --text-titre--font-weight: 600;
+  --text-section: 1rem;
+  --text-section--line-height: 1.5rem;
+  --text-section--font-weight: 600;
+  --text-corps: 0.9375rem;
+  --text-corps--line-height: 1.5rem;
+  --text-libelle: 0.8125rem;
+  --text-libelle--line-height: 1.125rem;
+  --text-chiffre: 1.75rem;
+  --text-chiffre--line-height: 2.125rem;
+
+  --radius-carte: 12px;
+  --shadow-carte: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.04);
+  --shadow-flottant: 0 8px 24px -6px rgb(15 23 42 / 0.18);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-fond font-sans text-corps text-texte antialiased;
+  }
+
+  /* Focus clavier visible sur tout élément interactif. */
+  :focus-visible {
+    outline: 2px solid var(--color-primaire);
+    outline-offset: 2px;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  a {
+    @apply text-primaire underline-offset-2 hover:underline;
+  }
+
+  ::selection {
+    @apply bg-primaire-clair;
+  }
+}
+
+@layer components {
+  /* Champs de formulaire : 44 px de haut, texte à 16 px sur téléphone (pas de zoom automatique sur iPhone). */
+  .champ {
+    @apply block min-h-11 w-full rounded-lg border border-bordure bg-surface px-3 py-2 text-base text-texte
+      transition-colors duration-150 placeholder:text-texte-doux focus:border-primaire focus:outline-none
+      focus:ring-2 focus:ring-primaire/20 sm:text-corps;
+  }
+
+  .champ[aria-invalid="true"] {
+    @apply border-danger focus:ring-danger/20;
+  }
+
+  .etiquette {
+    @apply grid gap-1.5 text-corps font-medium text-texte;
+  }
+
+  .aide {
+    @apply text-libelle font-normal text-texte-doux;
+  }
+
+  .erreur-champ {
+    @apply text-libelle font-normal text-danger;
+  }
+
+  input[type="range"].curseur {
+    @apply h-11 w-full cursor-pointer accent-primaire;
+  }
+
+  /* Contrôle segmenté Plan / Satellite de MapLibre, aux couleurs de la charte. */
+  .controle-segmente {
+    @apply flex overflow-hidden rounded-lg border border-bordure bg-surface shadow-carte;
+  }
+
+  .controle-segmente button {
+    @apply min-h-9 px-3 text-libelle font-medium text-texte transition-colors duration-150;
+  }
+
+  .controle-segmente button[aria-pressed="true"] {
+    @apply bg-primaire text-white;
+  }
+
+  /* Popups MapLibre */
+  .maplibregl-popup-content {
+    @apply rounded-carte border border-bordure p-0 font-sans text-texte shadow-flottant;
+  }
+
+  .maplibregl-popup-close-button {
+    @apply size-8 text-lg text-texte-doux;
+  }
+
+  .maplibregl-ctrl-attrib {
+    @apply text-[11px];
+  }
+
+  /* Carte plein écran (téléphone) */
+  .carte-plein-ecran {
+    @apply fixed inset-0 z-50 h-dvh! max-h-none! rounded-none!;
+  }
+
+  /* Visionneuse photo */
+  dialog.visionneuse {
+    @apply m-0 h-dvh max-h-none w-screen max-w-none bg-nuit p-0 text-white;
+  }
+
+  dialog.visionneuse::backdrop {
+    @apply bg-nuit;
+  }
+}

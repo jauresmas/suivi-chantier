@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone, bouton, alerte, barre_progression, pastille_etape, etat_vide %}
+{% from "composants/chantier.html" import entete_chantier, navigation_basse %}
+
+{% block title %}Étapes · {{ chantier.nom }}{% endblock %}
+{% block marge_basse %}pb-24 lg:pb-8{% endblock %}
+
+{% block content %}
+<div class="grid gap-6">
+  {{ entete_chantier(chantier, onglet) }}
+
+  <section class="grid gap-3 rounded-carte border border-bordure bg-surface p-5 shadow-carte" aria-label="Avancement global">
+    <div class="flex items-baseline justify-between gap-3">
+      <h2 class="text-section">Avancement global</h2>
+      <p class="text-chiffre font-semibold tabular-nums">{{ avancement }} %</p>
+    </div>
+    {{ barre_progression(avancement, "Avancement global", afficher_valeur=False) }}
+    <p class="aide">Chaque étape compte selon son poids : une étape de poids 20 pèse deux fois plus qu'une étape de poids 10.</p>
+  </section>
+
+  {% if erreur %}{{ alerte(erreur, ton="danger", icone_nom="circle-x", role="alert") }}{% endif %}
+
+  {% if etapes %}
+    <ol class="grid gap-3">
+      {% for etape in etapes %}
+        {% set etat = etat_etape(etape) %}
+        <li id="etape-{{ etape.id }}" class="grid scroll-mt-20 gap-3 rounded-carte border border-bordure bg-surface p-4 shadow-carte">
+          <div class="flex items-center gap-3">
+            {{ pastille_etape(etat) }}
+            <a href="/chantiers/{{ chantier.id }}/etapes/{{ etape.id }}" class="min-w-0 flex-1 truncate font-semibold text-texte">{{ libelle_etape(etape) }}</a>
+            <span class="font-semibold tabular-nums">{{ etape.avancement_pct }} %</span>
+          </div>
+          {{ barre_progression(etape.avancement_pct, "Avancement de " ~ libelle_etape(etape), afficher_valeur=False) }}
+          <p class="flex flex-wrap gap-x-3 gap-y-1 text-libelle text-texte-doux">
+            <span class="{{ 'font-medium text-danger' if etat.statut.value == 'en_retard' else '' }}">{{ etat.libelle }}</span>
+            <span>Poids {{ etape.poids }}</span>
+            {% if etape.date_fin_prevue %}<span class="tabular-nums">Fin prévue le {{ etape.date_fin_prevue.strftime("%d/%m/%Y") }}</span>{% endif %}
+            {% if etape.date_debut %}<span class="tabular-nums">Commencée le {{ etape.date_debut.strftime("%d/%m/%Y") }}</span>{% endif %}
+            {% if etape.date_fin %}<span class="tabular-nums">Terminée le {{ etape.date_fin.strftime("%d/%m/%Y") }}</span>{% endif %}
+          </p>
+
+          {% if est_proprietaire %}
+            <div class="grid grid-cols-2 gap-2">
+              <form method="post" action="/chantiers/{{ chantier.id }}/etapes/{{ etape.id }}/monter">
+                {{ champ_csrf(request) }}
+                {{ bouton("Monter", "secondaire", type="submit", icone_nom="arrow-up", classe="w-full",
+                          attributs={"aria-label": "Monter " ~ libelle_etape(etape), "disabled": loop.first or none}) }}
+              </form>
+              <form method="post" action="/chantiers/{{ chantier.id }}/etapes/{{ etape.id }}/descendre">
+                {{ champ_csrf(request) }}
+                {{ bouton("Descendre", "secondaire", type="submit", icone_nom="arrow-down", classe="w-full",
+                          attributs={"aria-label": "Descendre " ~ libelle_etape(etape), "disabled": loop.last or none}) }}
+              </form>
+            </div>
+
+            <details class="group border-t border-bordure pt-1">
+              <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between font-medium text-primaire [&::-webkit-details-marker]:hidden">
+                Mettre à jour l'avancement <span class="transition-transform duration-150 group-open:rotate-180">{{ icone("chevron-down", 18) }}</span>
+              </summary>
+              <form class="mt-2 grid gap-3" method="post" action="/chantiers/{{ chantier.id }}/etapes/{{ etape.id }}/avancement">
+                {{ champ_csrf(request) }}
+                <label class="etiquette"><span>Avancement : <output class="tabular-nums">{{ etape.avancement_pct }}</output> %</span>
+                  <input class="curseur" type="range" name="avancement_pct" min="0" max="100" step="5" value="{{ etape.avancement_pct }}"
+                         oninput="this.previousElementSibling.querySelector('output').value = this.value">
+                </label>
+                <label class="etiquette">Commentaire <span class="aide">Facultatif</span>
+                  <input class="champ" name="commentaire" maxlength="1000" placeholder="Ex. : constat lors de ma visite">
+                </label>
+                {{ bouton("Enregistrer l'avancement", "primaire", type="submit") }}
+              </form>
+            </details>
+
+            <details class="group border-t border-bordure pt-1">
+              <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between font-medium text-primaire [&::-webkit-details-marker]:hidden">
+                Modifier l'étape <span class="transition-transform duration-150 group-open:rotate-180">{{ icone("chevron-down", 18) }}</span>
+              </summary>
+              <form class="mt-2 grid gap-3" method="post" action="/chantiers/{{ chantier.id }}/etapes/{{ etape.id }}">
+                {{ champ_csrf(request) }}
+                <label class="etiquette">Libellé <span class="aide">Facultatif, sauf pour « Autre »</span>
+                  <input class="champ" name="libelle" value="{{ etape.libelle or '' }}" maxlength="150" placeholder="{{ LIBELLES_TYPE_ETAPE[etape.type] }}">
+                </label>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <label class="etiquette">Poids <span class="aide">De 1 à 100</span>
+                    <input class="champ tabular-nums" name="poids" type="number" inputmode="numeric" min="1" max="100" value="{{ etape.poids }}">
+                  </label>
+                  <label class="etiquette">Fin prévue <input class="champ" name="date_fin_prevue" type="date" value="{{ etape.date_fin_prevue or '' }}"></label>
+                  <label class="etiquette">Début réel <input class="champ" name="date_debut" type="date" value="{{ etape.date_debut or '' }}"></label>
+                  <label class="etiquette">Fin réelle <input class="champ" name="date_fin" type="date" value="{{ etape.date_fin or '' }}"></label>
+                </div>
+                {{ bouton("Enregistrer", "primaire", type="submit") }}
+              </form>
+              <form class="mt-3" method="post" action="/chantiers/{{ chantier.id }}/etapes/{{ etape.id }}/supprimer" onsubmit="return confirm('Supprimer cette étape ?')">
+                {{ champ_csrf(request) }}
+                {{ bouton("Supprimer l'étape", "danger", type="submit", icone_nom="trash-2") }}
+              </form>
+            </details>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    {{ etat_vide("list-checks", "Aucune étape pour l'instant", "Ajoutez les étapes de la construction pour suivre son avancement.") }}
+  {% endif %}
+
+  {% if est_proprietaire %}
+    <section class="grid gap-4 rounded-carte border border-bordure bg-surface p-5 shadow-carte" aria-labelledby="titre-ajout">
+      <h2 id="titre-ajout" class="text-section">Ajouter une étape</h2>
+      <form class="grid gap-4" method="post" action="/chantiers/{{ chantier.id }}/etapes">
+        {{ champ_csrf(request) }}
+        <label class="etiquette">Type
+          <select class="champ" name="type">
+            {% for type_ in types %}<option value="{{ type_.value }}">{{ LIBELLES_TYPE_ETAPE[type_] }} (poids proposé : {{ poids_par_defaut[type_] }})</option>{% endfor %}
+          </select>
+        </label>
+        <label class="etiquette">Libellé <span class="aide">Obligatoire pour « Autre »</span>
+          <input class="champ" name="libelle" maxlength="150" placeholder="Ex. : Clôture et portail">
+        </label>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="etiquette">Poids <span class="aide">Vide : poids proposé</span>
+            <input class="champ tabular-nums" name="poids" type="number" inputmode="numeric" min="1" max="100">
+          </label>
+          <label class="etiquette">Fin prévue <input class="champ" name="date_fin_prevue" type="date"></label>
+        </div>
+        {{ bouton("Ajouter l'étape", "primaire", type="submit", icone_nom="plus") }}
+      </form>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block navigation_basse %}{{ navigation_basse(chantier, onglet) }}{% endblock %}

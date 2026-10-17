@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone, bouton %}
+
+{% block title %}Inviter · {{ chantier.nom }}{% endblock %}
+
+{% block content %}
+<div class="mx-auto grid max-w-xl gap-6">
+  <a href="/chantiers/{{ chantier.id }}" class="inline-flex min-h-11 w-fit items-center gap-1 text-libelle text-texte-doux no-underline hover:text-texte hover:no-underline">{{ icone("chevron-left", 16) }} {{ chantier.nom }}</a>
+  <section class="grid gap-4 rounded-carte border border-bordure bg-surface p-5 shadow-carte sm:p-6">
+    <span class="grid size-11 place-items-center rounded-full bg-primaire-clair text-primaire">{{ icone("user-plus", 22) }}</span>
+    <h1 class="text-titre">Inviter quelqu'un</h1>
+    <p class="text-corps text-texte-doux">Vous obtiendrez un lien à envoyer, par exemple sur WhatsApp. Il est valable 7 jours et ne sert qu'une fois. Aucune adresse e-mail n'est nécessaire.</p>
+    <form class="grid gap-4" method="post" action="/chantiers/{{ chantier.id }}/invitations">
+      {{ champ_csrf(request) }}
+      <label class="etiquette">Rôle de la personne invitée
+        <select class="champ" name="role">
+          <option value="chef_chantier" selected>Chef de chantier : envoie les rapports et les photos</option>
+          <option value="proprietaire">Propriétaire : suit le chantier et invite</option>
+        </select>
+      </label>
+      {{ bouton("Créer un lien d'invitation", "primaire", type="submit", icone_nom="share-2") }}
+    </form>
+  </section>
+</div>
+{% endblock %}

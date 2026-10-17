@@ -1,0 +1,21 @@
+{% extends "_base.html" %}
+{% import "_elements.html" as e %}
+{% block apercu %}Vérifiez le point relevé sur la carte, puis validez-le ou rejetez-le.{% endblock %}
+{% block contenu %}
+  {% for texte in alertes %}{{ e.alerte("Relevé fait depuis un compte du chantier", [texte], "danger") }}{% endfor %}
+  {% if alerte_distance %}
+    {{ e.alerte("Relevé éloigné de la position actuelle", ["Le relevé est à " ~ (distance_m | distance) ~ " de la position que vous aviez indiquée. Vérifiez avant de valider."]) }}
+  {% endif %}
+  {{ e.titre(releve.nom_releveur ~ " a relevé la position de votre terrain") }}
+  {% call e.paragraphe() %}
+    La position relevée sur place ne servira de référence qu'après votre validation. Vérifiez le point sur la carte,
+    puis validez-le ou rejetez-le.
+  {% endcall %}
+  {{ e.details([
+    ("Relevé par", releve.nom_releveur ~ (" (" ~ releve.lien_releveur ~ ")" if releve.lien_releveur else "")),
+    ("Date", releve.realise_le | date_longue),
+    ("Qualité du signal", qualite.libelle ~ " (± " ~ (releve.precision_estimee_m | round | int) ~ " m)"),
+    ("Écart avec la position actuelle", (distance_m | distance) if distance_m is not none else "Aucune position auparavant"),
+  ]) }}
+  {{ e.bouton("Vérifier le relevé", lien) }}
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone, bouton, badge, alerte, avatar, etat_vide %}
+{% from "composants/photo.html" import vignette %}
+
+{% set chantier = rapport.chantier %}
+{% block title %}Rapport · {{ chantier.nom }}{% endblock %}
+
+{% block content %}
+<div class="mx-auto grid max-w-3xl gap-6">
+  <a href="/chantiers/{{ chantier.id }}" class="inline-flex min-h-11 w-fit items-center gap-1 text-libelle text-texte-doux no-underline hover:text-texte hover:no-underline">{{ icone("chevron-left", 16) }} {{ chantier.nom }}</a>
+
+  {% if rapport.statut.value == "brouillon" %}
+    {{ alerte("Brouillon visible de vous seul", "Commencé le " ~ (rapport.cree_le | date_longue) ~ ". Il n'apparaîtra aux autres membres qu'une fois publié.", "primaire", "file-text",
+              "Compléter et publier" if est_auteur else None, "/chantiers/%s/photos/envoyer" % chantier.id) }}
+  {% endif %}
+
+  <article class="grid gap-5 rounded-carte border border-bordure bg-surface p-5 shadow-carte sm:p-6">
+    <header class="flex flex-wrap items-start gap-3">
+      {{ avatar(rapport.auteur.nom_complet if rapport.auteur else None, "size-11") }}
+      <div class="min-w-0 flex-1">
+        <h1 class="text-titre">{% if rapport.publie_le %}Rapport du {{ rapport.publie_le | date_courte }}{% else %}Rapport en préparation{% endif %}</h1>
+        <p class="text-libelle text-texte-doux">
+          {{ rapport.auteur.nom_complet if rapport.auteur else "Compte supprimé" }}
+          {% if rapport.publie_le %} · publié le {{ rapport.publie_le | balise_date }}{% endif %}
+        </p>
+      </div>
+      {% if rapport.etape %}{{ badge(libelle_etape(rapport.etape), "primaire", "list-checks") }}{% endif %}
+    </header>
+
+    {% if avancement %}
+      <p class="flex items-center gap-2 rounded-lg bg-fond px-3 py-2 text-corps">
+        {{ icone("gauge", 18, "text-primaire") }} Avancement de l'étape : <span class="tabular-nums">{{ avancement.ancien_pct }} %</span> {{ icone("chevron-right", 14) }} <strong class="tabular-nums">{{ avancement.nouveau_pct }} %</strong>
+      </p>
+    {% endif %}
+
+    {% if rapport.texte %}<p class="whitespace-pre-line">{{ rapport.texte }}</p>{% endif %}
+
+    <section class="grid gap-3" aria-labelledby="titre-photos">
+      <h2 id="titre-photos" class="text-section">Photos <span class="text-texte-doux tabular-nums">({{ photos | length }})</span></h2>
+      {% if photos %}
+        <ul class="grid grid-cols-3 gap-2 sm:grid-cols-4" data-visionneuse>
+          {% for photo in photos %}<li>{{ vignette(photo, rapport.etape, chantier, taille=200) }}</li>{% endfor %}
+        </ul>
+      {% else %}
+        <p class="aide">Aucune photo dans ce rapport.</p>
+      {% endif %}
+    </section>
+  </article>
+
+  {% if rapport.statut.value == "publie" %}
+    <p class="flex items-start gap-2 aide">{{ icone("lock", 14, "mt-0.5 shrink-0") }} Ce rapport est publié : il ne peut plus être modifié. Une correction se fait par un nouveau rapport.</p>
+  {% endif %}
+</div>
+{% include "composants/visionneuse.html" %}
+<script type="module" src="/static/js/visionneuse.js"></script>
+{% endblock %}

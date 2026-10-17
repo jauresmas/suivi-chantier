@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone, pastille_etape, barre_progression, avatar, etat_vide %}
+
+{% block title %}{{ libelle_etape(etape) }} · {{ chantier.nom }}{% endblock %}
+
+{% block content %}
+{% set etat = etat_etape(etape) %}
+<div class="mx-auto grid max-w-3xl gap-6">
+  <a href="/chantiers/{{ chantier.id }}/etapes" class="inline-flex min-h-11 w-fit items-center gap-1 text-libelle text-texte-doux no-underline hover:text-texte hover:no-underline">{{ icone("chevron-left", 16) }} Étapes de {{ chantier.nom }}</a>
+
+  <section class="grid gap-3 rounded-carte border border-bordure bg-surface p-5 shadow-carte">
+    <div class="flex items-center gap-3">
+      {{ pastille_etape(etat) }}
+      <h1 class="min-w-0 flex-1 text-titre">{{ libelle_etape(etape) }}</h1>
+      <p class="text-chiffre font-semibold tabular-nums">{{ etape.avancement_pct }} %</p>
+    </div>
+    {{ barre_progression(etape.avancement_pct, "Avancement de l'étape", afficher_valeur=False) }}
+    <p class="text-libelle text-texte-doux">
+      <span class="{{ 'font-medium text-danger' if etat.statut.value == 'en_retard' else '' }}">{{ etat.libelle }}</span>
+      {% if etape.date_fin_prevue %} · fin prévue le <span class="tabular-nums">{{ etape.date_fin_prevue.strftime("%d/%m/%Y") }}</span>{% endif %}
+    </p>
+  </section>
+
+  <section class="grid gap-3" aria-labelledby="titre-historique">
+    <h2 id="titre-historique" class="text-section">Historique de l'avancement</h2>
+    {% if historique %}
+      <ol class="relative grid gap-3 before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-px before:bg-bordure">
+        {% for entree in historique %}
+          <li class="relative pl-9">
+            <span class="absolute top-5 left-[7px] size-3.5 rounded-full border-[3px] border-fond bg-primaire" aria-hidden="true"></span>
+            <div class="grid gap-2 rounded-carte border border-bordure bg-surface p-4 shadow-carte">
+              <div class="flex items-center gap-3">
+                {{ avatar(entree.auteur) }}
+                <div class="min-w-0 flex-1">
+                  <p class="truncate font-medium">{{ entree.auteur or "Compte supprimé" }}</p>
+                  <p class="text-libelle text-texte-doux">{{ entree.ligne.cree_le | balise_date }}</p>
+                </div>
+                <p class="flex items-center gap-1 font-semibold tabular-nums">{{ entree.ligne.ancien_pct }} % {{ icone("chevron-right", 14, "text-texte-doux") }} {{ entree.ligne.nouveau_pct }} %</p>
+              </div>
+              {% if entree.ligne.commentaire %}<p class="text-corps">{{ entree.ligne.commentaire }}</p>{% endif %}
+              {% if entree.rapport %}<a href="/rapports/{{ entree.rapport.id }}" class="inline-flex min-h-11 w-fit items-center gap-1 text-libelle font-medium">Voir le rapport {{ icone("chevron-right", 14) }}</a>{% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      {{ etat_vide("clock", "Pas encore de changement", "L'avancement de cette étape n'a pas encore été modifié.") }}
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

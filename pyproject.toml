@@ -1,0 +1,34 @@
+# Configuration des outils (le projet n'est pas un paquet installable : les dépendances sont dans
+# requirements.txt et requirements-dev.txt).
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["outils", "stockage"]
+
+[tool.ruff.lint]
+# E/F : erreurs et style de base ; I : ordre des imports ; B : pièges courants ; UP : syntaxe Python récente.
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI déclare ses dépendances et ses champs en valeur par défaut : c'est l'usage prévu.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Form", "fastapi.File", "fastapi.Query"]
+
+[tool.ruff.lint.per-file-ignores]
+# Contenu des icônes Lucide recopié tel quel, et migrations générées par Alembic.
+"app/icones.py" = ["E501"]
+"migrations/versions/*.py" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+fail_under = 75
+show_missing = true
+skip_covered = true

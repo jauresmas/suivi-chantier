@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone %}
+
+{% block title %}Relevé du terrain · Suivi Chantier{% endblock %}
+{% block head %}
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+{% endblock %}
+{% block compte %}{% endblock %}
+
+{% block content %}
+<div class="mx-auto grid max-w-md justify-items-center gap-4 py-10 text-center">
+  {% if succes %}
+    <span class="grid size-16 place-items-center rounded-full bg-succes-fond text-succes">{{ icone("circle-check-big", 32) }}</span>
+  {% else %}
+    <span class="grid size-16 place-items-center rounded-full bg-alerte-fond text-alerte">{{ icone("info", 32) }}</span>
+  {% endif %}
+  <h1 class="text-titre">{{ titre }}</h1>
+  <p class="text-lg text-texte-doux">{{ texte }}</p>
+</div>
+{% endblock %}

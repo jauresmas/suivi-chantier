@@ -1,0 +1,44 @@
+{% extends "auth/_cadre.html" %}
+{% from "composants/ui.html" import bouton, alerte, erreur_champ, attributs_erreur %}
+
+{% block title %}Créer un compte · Suivi Chantier{% endblock %}
+
+{% block formulaire %}
+<h1 class="mb-2 text-titre">Créer un compte</h1>
+{% if suivant.startswith("/invitations/") %}
+  <p class="mb-4 text-corps text-texte-doux">Une fois votre compte créé, vous reviendrez sur l'invitation pour rejoindre le chantier.</p>
+{% endif %}
+
+<form class="mt-4 grid gap-4" method="post" action="/inscription" novalidate>
+  {{ champ_csrf(request) }}
+  <input type="hidden" name="suivant" value="{{ suivant }}">
+
+  <label class="etiquette">Nom complet
+    <input class="champ" name="nom_complet" value="{{ valeurs.nom_complet }}" autocomplete="name" maxlength="150" required {{ attributs_erreur(erreurs, "nom_complet") }}>
+    {{ erreur_champ(erreurs, "nom_complet") }}
+  </label>
+
+  <label class="etiquette">Adresse e-mail
+    <input class="champ" type="email" name="email" value="{{ valeurs.email }}" autocomplete="email" inputmode="email" maxlength="255" required {{ attributs_erreur(erreurs, "email") }}>
+    {{ erreur_champ(erreurs, "email") }}
+  </label>
+
+  <label class="etiquette">Téléphone <span class="aide">Facultatif</span>
+    <input class="champ" type="tel" name="telephone" value="{{ valeurs.telephone }}" autocomplete="tel" placeholder="+229 01 90 00 00 00" maxlength="30" {{ attributs_erreur(erreurs, "telephone") }}>
+    {{ erreur_champ(erreurs, "telephone") }}
+  </label>
+
+  <label class="etiquette">Mot de passe <span class="aide">8 caractères minimum</span>
+    <input class="champ" type="password" name="mot_de_passe" autocomplete="new-password" minlength="8" maxlength="128" required {{ attributs_erreur(erreurs, "mot_de_passe") }}>
+    {{ erreur_champ(erreurs, "mot_de_passe") }}
+  </label>
+
+  {{ bouton("Créer mon compte", "primaire", type="submit", classe="mt-2 w-full") }}
+</form>
+{% endblock %}
+
+{% block pied %}
+<p class="text-center text-corps text-texte-doux">
+  Déjà un compte ? <a href="/connexion{% if suivant %}?suivant={{ suivant | urlencode }}{% endif %}" class="font-medium">Se connecter</a>
+</p>
+{% endblock %}

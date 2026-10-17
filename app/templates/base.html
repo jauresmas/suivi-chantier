@@ -1,36 +1,62 @@
+{% from "composants/ui.html" import icone, avatar %}
 <!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Suivi de chantier{% endblock %}</title>
-  <style>
-    :root { color-scheme: light dark; --accent: #c2410c; }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.5;
-    }
-    header { border-bottom: 4px solid var(--accent); padding: 1rem 1.5rem; }
-    header a { color: inherit; text-decoration: none; font-weight: 700; font-size: 1.25rem; }
-    main { max-width: 60rem; margin: 0 auto; padding: 2rem 1.5rem; }
-    a { color: var(--accent); }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Suivi Chantier{% endblock %}</title>
+  <meta name="description" content="Suivez la construction de votre maison, où que vous soyez.">
+  <link rel="icon" href="data:,">
+  <link rel="preload" href="/static/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  {# Feuille intégrée : un aller-retour de moins avant l'affichage (voir css_en_ligne). #}
+  <style>{{ css_en_ligne() }}</style>
   {% block head %}{% endblock %}
 </head>
-<body>
-  <header>
-    <a href="/">Suivi de chantier</a>
+<body class="min-h-dvh">
+  <a href="#contenu" class="sr-only z-50 rounded-lg bg-primaire px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-2">Aller au contenu</a>
+
+  <header class="sticky top-0 z-40 border-b border-bordure bg-surface/95 backdrop-blur">
+    <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4">
+      <a href="/" class="flex min-h-11 items-center gap-2 font-semibold text-texte no-underline hover:no-underline">
+        <span class="grid size-7 place-items-center rounded-md bg-accent text-white">{{ icone("hard-hat", 16) }}</span>
+        <span>Suivi Chantier</span>
+      </a>
+
+      {% block compte %}
+      {% if utilisateur %}
+        <details class="group relative">
+          <summary class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-2 transition-colors duration-150 hover:bg-fond [&::-webkit-details-marker]:hidden">
+            {{ avatar(utilisateur.nom_complet, "size-8") }}
+            <span class="hidden max-w-48 truncate text-corps font-medium sm:inline">{{ utilisateur.nom_complet }}</span>
+            <span class="text-texte-doux transition-transform duration-150 group-open:rotate-180">{{ icone("chevron-down", 16) }}</span>
+            <span class="sr-only">Menu du compte</span>
+          </summary>
+          <div class="absolute right-0 mt-2 w-60 rounded-carte border border-bordure bg-surface p-1 shadow-flottant">
+            <p class="truncate px-3 py-2 text-libelle text-texte-doux">{{ utilisateur.email }}</p>
+            <a href="/chantiers" class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-texte no-underline hover:bg-fond hover:no-underline">{{ icone("building-2", 18) }} Mes chantiers</a>
+            <a href="/chantiers/nouveau" class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-texte no-underline hover:bg-fond hover:no-underline">{{ icone("plus", 18) }} Nouveau chantier</a>
+            <a href="/compte/notifications" class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-texte no-underline hover:bg-fond hover:no-underline">{{ icone("mail", 18) }} Notifications</a>
+            <form method="post" action="/deconnexion" class="border-t border-bordure pt-1 mt-1">
+              {{ champ_csrf(request) }}
+              <button type="submit" class="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-texte hover:bg-fond">{{ icone("log-out", 18) }} Se déconnecter</button>
+            </form>
+          </div>
+        </details>
+      {% else %}
+        <nav class="flex items-center gap-1" aria-label="Compte">
+          <a href="/connexion" class="inline-flex min-h-11 items-center rounded-lg px-3 font-medium text-texte no-underline hover:bg-fond hover:no-underline">Se connecter</a>
+          <a href="/inscription" class="hidden min-h-11 items-center rounded-lg bg-primaire px-4 font-medium text-white no-underline hover:bg-primaire-fonce hover:no-underline sm:inline-flex">Créer un compte</a>
+        </nav>
+      {% endif %}
+      {% endblock %}
+    </div>
   </header>
-  <main>
-    {% block content %}
-    <h1>Bienvenue</h1>
-    <p>Application de suivi des chantiers, adossée à PostgreSQL / PostGIS.</p>
-    <ul>
-      <li><a href="/docs">Documentation de l'API</a></li>
-      <li><a href="/health">État du service</a></li>
-    </ul>
-    {% endblock %}
+
+  <main id="contenu" class="mx-auto w-full max-w-7xl px-4 py-6 {% block marge_basse %}{% endblock %}">
+    {% block content %}{% endblock %}
   </main>
+
+  {% block navigation_basse %}{% endblock %}
+  <script type="module" src="/static/js/dates.js"></script>
 </body>
 </html>

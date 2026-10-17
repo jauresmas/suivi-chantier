@@ -1,0 +1,26 @@
+{% extends "_base.html" %}
+{% import "_elements.html" as e %}
+{% set ch = changement %}
+{% macro coordonnees(position) -%}
+  {%- if position -%}{{ "%.6f" | format(position[0]) }}, {{ "%.6f" | format(position[1]) }}{%- else -%}Aucune{%- endif -%}
+{%- endmacro %}
+{% block apercu %}Modifiée par {{ ch.auteur }}{% if ch.deplacement_m is not none %}, déplacement de {{ ch.deplacement_m | distance }}{% endif %}.{% endblock %}
+{% block contenu %}
+  {{ e.titre("La position du chantier a été modifiée") }}
+  {% call e.paragraphe() %}
+    La position de référence de « {{ chantier.nom }} » a changé. C'est elle qui sert à vérifier où les photos ont été prises.
+  {% endcall %}
+  {{ e.details([
+    ("Modifiée par", ch.auteur),
+    ("Date", ch.entree.cree_le | date_longue),
+    ("Ancienne position", coordonnees(ch.ancienne)),
+    ("Nouvelle position", coordonnees(ch.nouvelle)),
+    ("Déplacement", (ch.deplacement_m | distance) if ch.deplacement_m is not none else "Première position"),
+    ("Source", ch.libelle ~ (" (" ~ ch.releveur ~ ")" if ch.releveur else "")),
+  ]) }}
+  {% call e.paragraphe() %}
+    Si ce changement ne vient ni de vous ni d'un autre propriétaire du chantier, consultez l'historique de la position
+    et changez votre mot de passe.
+  {% endcall %}
+  {{ e.bouton("Voir l'historique", lien) }}
+{% endblock %}

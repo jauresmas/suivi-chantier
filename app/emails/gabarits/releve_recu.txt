@@ -1,0 +1,24 @@
+{% extends "_base.txt" %}
+{% block contenu %}
+{% for texte in alertes %}
+⚠ RELEVÉ FAIT DEPUIS UN COMPTE DU CHANTIER
+{{ texte }}
+
+{% endfor %}
+{% if alerte_distance %}
+⚠ RELEVÉ ÉLOIGNÉ DE LA POSITION ACTUELLE
+Le relevé est à {{ distance_m | distance }} de la position que vous aviez indiquée. Vérifiez avant de valider.
+
+{% endif %}
+{{ releve.nom_releveur }} a relevé la position de votre terrain « {{ chantier.nom }} ».
+
+La position relevée sur place ne servira de référence qu'après votre validation.
+
+Relevé par : {{ releve.nom_releveur }}{% if releve.lien_releveur %} ({{ releve.lien_releveur }}){% endif %}
+
+Date : {{ releve.realise_le | date_longue }}
+Qualité du signal : {{ qualite.libelle }} (± {{ releve.precision_estimee_m | round | int }} m)
+Écart avec la position actuelle : {{ (distance_m | distance) if distance_m is not none else "aucune position auparavant" }}
+
+Vérifier le relevé : {{ lien }}
+{% endblock %}

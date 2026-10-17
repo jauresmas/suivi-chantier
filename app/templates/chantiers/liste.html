@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import bouton, badge, barre_progression, etat_vide, icone %}
+{% from "composants/chantier.html" import badge_statut %}
+
+{% block title %}Mes chantiers · Suivi Chantier{% endblock %}
+{% block head %}{% if adhesions %}{% include "_carte_ressources.html" %}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="flex flex-wrap items-center justify-between gap-3">
+  <h1 class="text-titre">Mes chantiers</h1>
+  {{ bouton("Nouveau chantier", "primaire", href="/chantiers/nouveau", icone_nom="plus") }}
+</div>
+
+{% if adhesions %}
+  <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+    <ul class="grid content-start gap-3">
+      {% for adhesion in adhesions %}
+        {% set chantier = adhesion.chantier %}
+        {% set resume = resumes[chantier.id] %}
+        <li>
+          <a href="/chantiers/{{ chantier.id }}" class="group block rounded-carte border border-bordure bg-surface p-4 text-texte no-underline shadow-carte transition-colors duration-150 hover:border-primaire/40 hover:no-underline">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate text-section group-hover:text-primaire">{{ chantier.nom }}</p>
+                <p class="mt-0.5 flex items-center gap-1.5 text-libelle text-texte-doux">{{ icone("map-pin", 14) }} {{ chantier.ville or "Ville non renseignée" }}</p>
+                {% if chantier.statut_position.value in ("non_definie", "a_valider") %}
+                  {% set f = resume.fiabilite %}
+                  <p class="mt-2">{{ badge(f.libelle, f.ton, f.icone) }}</p>
+                {% endif %}
+              </div>
+              {{ badge_statut(chantier) }}
+            </div>
+            <div class="mt-4">{{ barre_progression(resume.avancement, "Avancement de " ~ chantier.nom) }}</div>
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-libelle text-texte-doux">
+              <span class="flex items-center gap-1.5">{{ icone("clock", 14) }}
+                {% if resume.dernier_rapport %}Dernier rapport {{ resume.dernier_rapport | date_relative }}{% else %}Aucun rapport publié{% endif %}
+              </span>
+              {{ badge(LIBELLES_ROLE[adhesion.role], "primaire" if adhesion.role.value == "proprietaire" else "neutre", "user") }}
+            </div>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    <div id="carte" class="h-72 overflow-hidden rounded-carte border border-bordure shadow-carte lg:sticky lg:top-20 lg:h-[32rem]" data-mode="liste" aria-label="Carte de mes chantiers"></div>
+  </div>
+  <script type="module" src="/static/js/cartes-chantiers.js"></script>
+{% else %}
+  <div class="mt-6">
+    {{ etat_vide("building-2", "Aucun chantier pour l'instant",
+                 "Créez votre chantier pour suivre sa construction. Si l'on vous a envoyé un lien d'invitation, ouvrez-le pour rejoindre le chantier.",
+                 "Créer un chantier", "/chantiers/nouveau") }}
+  </div>
+{% endif %}
+{% endblock %}

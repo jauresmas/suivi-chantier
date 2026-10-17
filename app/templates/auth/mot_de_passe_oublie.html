@@ -1,0 +1,32 @@
+{% extends "auth/_cadre.html" %}
+{% from "composants/ui.html" import bouton, alerte, icone %}
+
+{% block title %}Mot de passe oublié · Suivi Chantier{% endblock %}
+
+{% block formulaire %}
+{% if envoye %}
+  <span class="grid size-11 place-items-center rounded-full bg-succes-fond text-succes">{{ icone("mail", 22) }}</span>
+  <h1 class="mt-4 text-titre">Vérifiez vos e-mails</h1>
+  <p class="mt-2 text-corps text-texte-doux">
+    Si un compte existe pour <strong class="text-texte">{{ email }}</strong>, nous venons de lui envoyer un lien pour choisir
+    un nouveau mot de passe. Il est valable <strong class="text-texte">1 heure</strong>.
+  </p>
+  <p class="mt-2 text-corps text-texte-doux">Rien reçu après quelques minutes ? Regardez dans les courriers indésirables.</p>
+  <div class="mt-6 grid">{{ bouton("Retour à la connexion", "secondaire", href="/connexion") }}</div>
+{% else %}
+  <h1 class="mb-2 text-titre">Mot de passe oublié</h1>
+  <p class="mb-6 text-corps text-texte-doux">Indiquez l'adresse de votre compte : nous vous enverrons un lien pour choisir un nouveau mot de passe.</p>
+  {% if erreur %}<div class="mb-4">{{ alerte(erreur, ton="danger", icone_nom="circle-x", role="alert") }}</div>{% endif %}
+  <form class="grid gap-4" method="post" action="/mot-de-passe-oublie">
+    {{ champ_csrf(request) }}
+    <label class="etiquette">Adresse e-mail
+      <input class="champ" type="email" name="email" value="{{ email }}" autocomplete="email" inputmode="email" required>
+    </label>
+    {{ bouton("Recevoir le lien", "primaire", type="submit", classe="mt-2 w-full") }}
+  </form>
+{% endif %}
+{% endblock %}
+
+{% block pied %}
+<p class="text-center text-corps text-texte-doux"><a href="/connexion" class="font-medium">Retour à la connexion</a></p>
+{% endblock %}

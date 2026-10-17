@@ -1,0 +1,60 @@
+{#- Éléments réutilisés par les gabarits HTML. Import : {% import "_elements.html" as e %} -#}
+{% set police = "font-family:Arial,Helvetica,sans-serif;" %}
+
+{% macro titre(texte) -%}
+  <h1 style="margin:0 0 12px;{{ police }}font-size:20px;line-height:28px;font-weight:bold;color:{{ c.texte }};">{{ texte }}</h1>
+{%- endmacro %}
+
+{% macro paragraphe() -%}
+  <p style="margin:0 0 16px;">{{ caller() }}</p>
+{%- endmacro %}
+
+{# Bouton « à l'épreuve des messageries » : un tableau coloré autour du lien. #}
+{% macro bouton(texte, lien) -%}
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 4px;">
+    <tr>
+      <td style="border-radius:8px;background-color:{{ c.primaire }};">
+        <a href="{{ lien }}" style="display:inline-block;padding:12px 22px;{{ police }}font-size:16px;font-weight:bold;line-height:20px;color:{{ c.white }};text-decoration:none;border-radius:8px;">{{ texte }}</a>
+      </td>
+    </tr>
+  </table>
+{%- endmacro %}
+
+{# Encadré d'avertissement en tête d'e-mail : ton « alerte » (orange) ou « danger » (rouge). #}
+{% macro alerte(titre, lignes, ton="alerte") -%}
+  {% set fond, trait = (c.danger_fond, c.danger) if ton == "danger" else (c.alerte_fond, c.alerte) %}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;">
+    <tr>
+      <td style="padding:12px 16px;border-left:4px solid {{ trait }};border-radius:6px;background-color:{{ fond }};{{ police }}font-size:15px;line-height:22px;color:{{ c.texte }};">
+        <strong style="color:{{ trait }};">⚠ {{ titre }}</strong>
+        {% for ligne in lignes %}<br>{{ ligne }}{% endfor %}
+      </td>
+    </tr>
+  </table>
+{%- endmacro %}
+
+{# Liste « libellé : valeur ». #}
+{% macro details(lignes) -%}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;">
+    {% for libelle, valeur in lignes if valeur %}
+      <tr>
+        <td style="padding:6px 0;border-top:1px solid {{ c.bordure }};{{ police }}font-size:14px;line-height:20px;color:{{ c.texte_doux }};width:40%;vertical-align:top;">{{ libelle }}</td>
+        <td style="padding:6px 0 6px 12px;border-top:1px solid {{ c.bordure }};{{ police }}font-size:15px;line-height:20px;color:{{ c.texte }};vertical-align:top;">{{ valeur }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+{%- endmacro %}
+
+{# Un rapport : auteur, date, étape, commentaire, vérification des photos (jamais les photos elles-mêmes). #}
+{% macro rapport(r, note_position=None, lien_compact=False) -%}
+  <p style="margin:0 0 4px;{{ police }}font-size:14px;line-height:20px;color:{{ c.texte_doux }};">{{ r.auteur }} · {{ r.rapport.publie_le | date_longue }}</p>
+  {% if r.titre_etape %}<p style="margin:0 0 8px;{{ police }}font-size:17px;line-height:24px;font-weight:bold;color:{{ c.texte }};">{{ r.titre_etape }}</p>{% endif %}
+  {% if r.texte %}<p style="margin:0 0 12px;white-space:pre-line;">{{ r.texte }}</p>{% endif %}
+  <p style="margin:0 0 4px;{{ police }}font-size:15px;line-height:22px;color:{{ c.texte }};">{{ r.photos.resume() }}</p>
+  {% if note_position %}<p style="margin:0 0 4px;{{ police }}font-size:13px;line-height:18px;color:{{ c.texte_doux }};">{{ note_position }}</p>{% endif %}
+  {% if lien_compact %}
+    <p style="margin:8px 0 0;"><a href="{{ r.lien }}" style="{{ police }}font-size:15px;font-weight:bold;color:{{ c.primaire }};">Voir le rapport</a></p>
+  {% else %}
+    {{ bouton("Voir le rapport", r.lien) }}
+  {% endif %}
+{%- endmacro %}

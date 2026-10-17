@@ -1,0 +1,19 @@
+{% extends "_base.html" %}
+{% import "_elements.html" as e %}
+{% block apercu %}Aucun rapport publié depuis {{ jours }} jours sur « {{ chantier.nom }} ».{% endblock %}
+{% block contenu %}
+  {{ e.titre("Aucune nouvelle depuis " ~ jours ~ " jours") }}
+  {% call e.paragraphe() %}
+    {% if dernier_rapport %}Le dernier rapport publié sur « {{ chantier.nom }} » date du {{ dernier_rapport | date_longue }}.
+    {% else %}Aucun rapport n'a encore été publié sur « {{ chantier.nom }} ».{% endif %}
+  {% endcall %}
+  {% if chefs %}
+    {% call e.paragraphe() %}
+      Prenez des nouvelles auprès de votre chef de chantier :
+      {% for chef in chefs %}<br><strong>{{ chef.nom_complet }}</strong>{% if chef.telephone %} · <a href="tel:{{ chef.telephone | replace(' ', '') }}" style="color:{{ c.primaire }};">{{ chef.telephone }}</a>{% endif %}{% endfor %}
+    {% endcall %}
+  {% else %}
+    {% call e.paragraphe() %}Aucun chef de chantier n'a encore rejoint ce chantier : invitez-le depuis la page du chantier.{% endcall %}
+  {% endif %}
+  {{ e.bouton("Voir le chantier", lien) }}
+{% endblock %}

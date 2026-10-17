@@ -1,0 +1,33 @@
+{% extends "auth/_cadre.html" %}
+{% from "composants/ui.html" import bouton, icone %}
+
+{% block title %}Notifications · Suivi Chantier{% endblock %}
+{% block head %}<meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">{% endblock %}
+
+{% block formulaire %}
+{% if invalide %}
+  <span class="grid size-11 place-items-center rounded-full bg-alerte-fond text-alerte">{{ icone("info", 22) }}</span>
+  <h1 class="mt-4 text-titre">Ce lien ne fonctionne pas</h1>
+  <p class="mt-2 text-corps text-texte-doux">Vérifiez qu'il a été copié en entier, ou réglez vos notifications depuis votre compte.</p>
+  <div class="mt-6 grid">{{ bouton("Gérer mes notifications", "secondaire", href="/compte/notifications") }}</div>
+{% elif fait %}
+  <span class="grid size-11 place-items-center rounded-full bg-succes-fond text-succes">{{ icone("circle-check", 22) }}</span>
+  <h1 class="mt-4 text-titre">C'est fait</h1>
+  <p class="mt-2 text-corps text-texte-doux">
+    Vous ne recevrez plus d'e-mails pour « {{ chantier.nom }} », sauf les alertes de sécurité
+    (position du chantier modifiée, mot de passe).
+  </p>
+  <div class="mt-6 grid">{{ bouton("Gérer mes notifications", "secondaire", href="/compte/notifications") }}</div>
+{% else %}
+  <span class="grid size-11 place-items-center rounded-full bg-primaire-clair text-primaire">{{ icone("mail", 22) }}</span>
+  <h1 class="mt-4 text-titre">Ne plus recevoir d'e-mails pour « {{ chantier.nom }} » ?</h1>
+  <p class="mt-2 text-corps text-texte-doux">Les alertes de sécurité (position du chantier modifiée, mot de passe) restent envoyées.</p>
+  <form method="post" action="/notifications/desinscription/{{ jeton }}" class="mt-6 grid">
+    {{ bouton("Me désinscrire de ce chantier", "primaire", type="submit") }}
+  </form>
+{% endif %}
+{% endblock %}
+
+{% block pied %}
+<p class="text-center text-corps text-texte-doux"><a href="/compte/notifications" class="font-medium">Régler toutes mes notifications</a></p>
+{% endblock %}

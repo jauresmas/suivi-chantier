@@ -1,0 +1,12 @@
+{% extends "_base.html" %}
+{% import "_elements.html" as e %}
+{% block apercu %}Le lien n'a pas été utilisé dans les 72 heures.{% endblock %}
+{% block contenu %}
+  {{ e.titre("Le lien de relevé a expiré") }}
+  {% call e.paragraphe() %}
+    Le lien envoyé le {{ releve.cree_le | date_longue }} à <strong>{{ releve.nom_releveur }}</strong>
+    pour relever la position de « {{ chantier.nom }} » n'a pas été utilisé dans les 72 heures.
+  {% endcall %}
+  {% call e.paragraphe() %}Vous pouvez envoyer un nouveau lien, à cette personne ou à un autre proche de confiance.{% endcall %}
+  {{ e.bouton("Demander un nouveau relevé", lien) }}
+{% endblock %}

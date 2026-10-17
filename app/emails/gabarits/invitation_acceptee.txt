@@ -1,0 +1,11 @@
+{% extends "_base.txt" %}
+{% block contenu %}
+{{ membre.nom_complet }} a rejoint le chantier
+
+{{ membre.nom_complet }} ({{ membre.email }}) a accepté votre invitation sur « {{ chantier.nom }} » comme {{ LIBELLES_ROLE[role] | lower }}.
+{% if role.value == "chef_chantier" %}
+Ses rapports et ses photos apparaîtront sur la page du chantier.
+{% endif %}
+
+Voir le chantier : {{ lien }}
+{% endblock %}

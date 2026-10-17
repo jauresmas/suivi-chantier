@@ -2,17 +2,26 @@
 
 from collections.abc import Iterator
 
-from sqlalchemy import create_engine
+from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import get_settings
 
-engine = create_engine(
-    get_settings().database_url,
-    pool_pre_ping=True,
-    # Échoue vite si le serveur ne répond pas, au lieu de bloquer la requête.
-    connect_args={"connect_timeout": 5},
-)
+
+def creer_moteur(url: str) -> Engine:
+    return create_engine(
+        url,
+        pool_pre_ping=True,
+        connect_args={
+            # Échoue vite si le serveur ne répond pas, au lieu de bloquer la requête.
+            "connect_timeout": 5,
+            # Les dates relues depuis la base sont exprimées en UTC.
+            "options": "-c timezone=UTC",
+        },
+    )
+
+
+engine = creer_moteur(get_settings().database_url)
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 

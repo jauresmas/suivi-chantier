@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "composants/ui.html" import icone, bouton, alerte, etat_vide %}
+
+{% block title %}Notifications · Suivi Chantier{% endblock %}
+
+{% block content %}
+<div class="mx-auto grid max-w-2xl gap-6">
+  <div class="grid gap-2">
+    <a href="/chantiers" class="inline-flex min-h-11 w-fit items-center gap-1 text-libelle text-texte-doux no-underline hover:text-texte hover:no-underline">{{ icone("chevron-left", 16) }} Mes chantiers</a>
+    <h1 class="text-titre">Notifications par e-mail</h1>
+    <p class="text-corps text-texte-doux">Choisissez, pour chaque chantier, comment être prévenu des nouveaux rapports.</p>
+  </div>
+
+  {% if enregistre %}{{ alerte("Préférences enregistrées", ton="succes", icone_nom="circle-check") }}{% endif %}
+
+  {% if chantiers %}
+    <form method="post" action="/compte/notifications" class="grid gap-4">
+      {{ champ_csrf(request) }}
+      {% for chantier, mode_actuel in chantiers %}
+        <fieldset class="grid gap-2 rounded-carte border border-bordure bg-surface p-5 shadow-carte">
+          <legend class="float-left mb-2 text-section">{{ chantier.nom }}</legend>
+          <div class="clear-left grid gap-2 sm:grid-cols-3">
+            {% for mode, libelle in modes.items() %}
+              <label class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-bordure px-3 py-2 has-[:checked]:border-primaire has-[:checked]:bg-primaire-clair">
+                <input type="radio" name="mode_{{ chantier.id }}" value="{{ mode.value }}" class="size-5 shrink-0 accent-primaire" {% if mode == mode_actuel %}checked{% endif %}>
+                <span class="text-corps">{{ libelle }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+      {% endfor %}
+      <div class="flex justify-end">{{ bouton("Enregistrer", "primaire", type="submit") }}</div>
+    </form>
+
+    <section class="grid gap-3 rounded-carte border border-bordure bg-surface p-5 shadow-carte" aria-labelledby="titre-toujours">
+      <h2 class="text-section" id="titre-toujours">Ce que vous recevez dans tous les cas</h2>
+      <ul class="grid gap-2 text-corps">
+        <li class="flex gap-2">{{ icone("lock", 18, "mt-0.5 shrink-0 text-primaire") }}<span><strong>Position du chantier modifiée</strong> : toujours envoyé, même avec « Aucun e-mail ». C'est une protection contre un déplacement discret du point qui sert à vérifier les photos.</span></li>
+        <li class="flex gap-2">{{ icone("lock", 18, "mt-0.5 shrink-0 text-primaire") }}<span><strong>Réinitialisation du mot de passe</strong>, quand vous la demandez.</span></li>
+      </ul>
+      <p class="text-libelle text-texte-doux">Sauf avec « Aucun e-mail », vous êtes aussi prévenu tout de suite d'un relevé de position reçu ou expiré, d'une invitation acceptée et d'un chantier resté sans nouvelles. Le résumé quotidien regroupe seulement les rapports.</p>
+    </section>
+  {% else %}
+    {{ etat_vide("mail", "Aucun chantier dont vous êtes propriétaire",
+                 "Les e-mails de suivi sont envoyés aux propriétaires. Un chef de chantier n'en reçoit pas pour ses propres rapports." if chef_ailleurs else "Créez un chantier pour recevoir ses rapports par e-mail.") }}
+  {% endif %}
+</div>
+{% endblock %}

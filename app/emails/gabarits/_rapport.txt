@@ -1,0 +1,15 @@
+{{ r.auteur }} · {{ r.rapport.publie_le | date_longue }}
+{% if r.titre_etape %}
+Étape : {{ r.titre_etape }}
+{% endif %}
+{% if r.texte %}
+
+{{ r.texte }}
+
+{% endif %}
+{{ r.photos.resume() }}
+{% if note_position %}
+{{ note_position }}
+{% endif %}
+
+Voir le rapport : {{ r.lien }}

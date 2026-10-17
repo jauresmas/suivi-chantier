@@ -1,0 +1,9 @@
+{% extends "_base.html" %}
+{% import "_elements.html" as e %}
+{% block apercu %}{{ r.auteur }} a publié un rapport{% if r.titre_etape %} : {{ r.titre_etape }}{% endif %}. {{ r.photos.resume() }}.{% endblock %}
+{% block contenu %}
+  {% set avertissements = r.photos.avertissements() %}
+  {% if avertissements %}{{ e.alerte("Photos à vérifier", avertissements) }}{% endif %}
+  {{ e.titre("Nouveau rapport sur « " ~ chantier.nom ~ " »") }}
+  {{ e.rapport(r, note_position) }}
+{% endblock %}

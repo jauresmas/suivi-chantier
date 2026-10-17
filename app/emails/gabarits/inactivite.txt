@@ -1,0 +1,23 @@
+{% extends "_base.txt" %}
+{% block contenu %}
+Aucune nouvelle depuis {{ jours }} jours
+
+{% if dernier_rapport %}
+Le dernier rapport publié sur « {{ chantier.nom }} » date du {{ dernier_rapport | date_longue }}.
+{% else %}
+Aucun rapport n'a encore été publié sur « {{ chantier.nom }} ».
+{% endif %}
+{% if chefs %}
+
+Prenez des nouvelles auprès de votre chef de chantier :
+{% for chef in chefs %}
+- {{ chef.nom_complet }}{% if chef.telephone %} : {{ chef.telephone }}{% endif %}
+
+{% endfor %}
+{% else %}
+
+Aucun chef de chantier n'a encore rejoint ce chantier : invitez-le depuis la page du chantier.
+{% endif %}
+
+Voir le chantier : {{ lien }}
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "_base.html" %}
+{% import "_elements.html" as e %}
+{% block apercu %}{{ rapports | length }} rapport{{ "s" if rapports | length > 1 }} publié{{ "s" if rapports | length > 1 }} depuis le dernier résumé.{% endblock %}
+{% block contenu %}
+  {% if avertissements %}{{ e.alerte("Photos à vérifier", avertissements) }}{% endif %}
+  {{ e.titre("Résumé du jour — « " ~ chantier.nom ~ " »") }}
+  {% call e.paragraphe() %}{{ rapports | length }} rapport{{ "s" if rapports | length > 1 }} publié{{ "s" if rapports | length > 1 }} depuis le dernier résumé.{% endcall %}
+  {% for r in rapports %}
+    <div style="margin:0 0 16px;padding:16px 0 0;border-top:1px solid {{ c.bordure }};">
+      {{ e.rapport(r, lien_compact=True) }}
+    </div>
+  {% endfor %}
+  {% if note_position %}<p style="margin:0;font-size:13px;line-height:18px;color:{{ c.texte_doux }};">{{ note_position }}</p>{% endif %}
+{% endblock %}
